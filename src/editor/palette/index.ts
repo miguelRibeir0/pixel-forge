@@ -1,0 +1,1 @@
+export { PICO_8, PICO_8_PALETTE, AAP_64, NES_PALETTE, ALL_PALETTES } from './palettes';
