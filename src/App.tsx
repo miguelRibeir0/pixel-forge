@@ -19,25 +19,27 @@ function EditorHeader() {
   const displayZoom = fitMode ? zoom.toFixed(1) : zoom;
 
   return (
-    <div className="flex items-center justify-between px-3 py-1 bg-bg-secondary border-b-2 border-border select-none">
+    <div className="flex items-center justify-between px-4 py-1.5 bg-bg-secondary border-b border-border select-none">
       <div className="flex items-center gap-3">
-        <span className="text-xl text-accent tracking-widest">[ PIXEL FORGE ]</span>
-        <span className="text-lg text-border">|</span>
+        <span className="text-lg text-accent tracking-widest font-bold opacity-90">PIXEL FORGE</span>
+        <span className="text-border-muted text-xs">///</span>
         <button
           onClick={clearProject}
-          className="text-lg text-text-secondary hover:text-text-primary transition-colors"
+          className="text-lg text-text-secondary hover:text-text-primary transition-colors duration-150"
           title="Switch project"
         >
           {projectName}
         </button>
         {docWidth && docHeight && (
-          <span className="text-base text-text-secondary">
-            ({docWidth}x{docHeight})
+          <span className="text-sm text-text-muted px-2 py-0.5 bg-surface rounded">
+            {docWidth}×{docHeight}
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-base text-text-secondary">ZOOM {displayZoom}x</span>
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-text-muted">
+          <span className="text-text-secondary">{displayZoom}</span>x
+        </span>
       </div>
     </div>
   );
@@ -47,20 +49,35 @@ function StatusBar() {
   const activeTool = useEditorStore(s => s.activeTool);
   const brushSize = useEditorStore(s => s.brushSize);
   const activeColorIndex = useEditorStore(s => s.activeColorIndex);
+  const cursorPixel = useEditorStore(s => s.cursorPixel);
   const project = useEditorStore(s => s.project);
   const color = project?.palette.colors[activeColorIndex] ?? '#fff';
 
   return (
-    <div className="flex items-center justify-between px-3 py-0.5 bg-bg-secondary border-t-2 border-border select-none">
+    <div className="flex items-center justify-between px-4 py-1 bg-bg-secondary border-t border-border select-none text-sm">
       <div className="flex items-center gap-4">
-        <span className="text-base text-text-secondary">TOOL: <span className="text-accent">{activeTool.toUpperCase()}</span></span>
-        <span className="text-base text-text-secondary">BRUSH: <span className="text-accent">{brushSize}</span></span>
-        <span className="flex items-center gap-1 text-base text-text-secondary">
-          COLOR:
-          <span className="inline-block w-3 h-3 border border-border" style={{ backgroundColor: color }} />
+        <span className="text-text-muted">
+          <span className="text-text-secondary">{activeTool.toUpperCase()}</span>
         </span>
+        <span className="text-border-subtle">|</span>
+        <span className="text-text-muted">
+          BRUSH <span className="text-text-secondary">{brushSize}</span>
+        </span>
+        <span className="text-border-subtle">|</span>
+        <span className="flex items-center gap-1.5 text-text-muted">
+          <span className="inline-block w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: color }} />
+          <span className="text-text-secondary">{color}</span>
+        </span>
+        {cursorPixel && (
+          <>
+            <span className="text-border-subtle">|</span>
+            <span className="text-text-muted">
+              <span className="text-text-secondary">{cursorPixel.x},{cursorPixel.y}</span>
+            </span>
+          </>
+        )}
       </div>
-      <span className="text-base text-text-secondary">v0.1.0</span>
+      <span className="text-text-muted">v0.1.0</span>
     </div>
   );
 }
@@ -73,8 +90,9 @@ function EditorScreen() {
       <div className="flex flex-1 overflow-hidden">
         <Toolbar />
         <PixelCanvas />
-        <div className="w-52 flex flex-col border-l-2 border-border bg-bg-secondary">
+        <div className="w-52 flex flex-col border-l border-border bg-bg-secondary">
           <ColorPalette />
+          <div className="divider" />
           <LayerPanel />
         </div>
       </div>
@@ -127,7 +145,10 @@ export default function App() {
 
   if (loading) return (
     <div className="w-full h-full flex items-center justify-center bg-bg-primary bg-dotted">
-      <div className="text-accent text-2xl animate-pulse">LOADING...</div>
+      <div className="flex flex-col items-center gap-3">
+        <div className="text-accent text-2xl tracking-widest animate-pulse">PIXEL FORGE</div>
+        <div className="text-text-muted text-sm">Loading...</div>
+      </div>
     </div>
   );
 

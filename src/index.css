@@ -1,24 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #080810;
-  --color-bg-secondary: #0f1020;
-  --color-bg-tertiary: #16172e;
-  --color-surface: #1c1e35;
-  --color-surface-hover: #25284a;
-  --color-border: #3d4270;
-  --color-border-light: #565f99;
-  --color-border-dark: #262940;
+  --color-bg-primary: #0a0a14;
+  --color-bg-secondary: #10111f;
+  --color-bg-tertiary: #171830;
+  --color-surface: #1a1c34;
+  --color-surface-hover: #222545;
+  --color-surface-active: #2a2d52;
+  --color-border: #2a2d4a;
+  --color-border-light: #3a3e66;
+  --color-border-dark: #1a1c30;
+  --color-border-subtle: #1e2040;
   --color-text-primary: #d5d8f0;
-  --color-text-secondary: #5b6090;
+  --color-text-secondary: #6b70a0;
+  --color-text-muted: #4a4f7a;
   --color-accent: #00e5ff;
   --color-accent-hover: #00bcd4;
-  --color-accent-dim: #00e5ff18;
+  --color-accent-dim: rgba(0, 229, 255, 0.08);
+  --color-accent-glow: rgba(0, 229, 255, 0.15);
   --color-danger: #ff2a6d;
+  --color-danger-dim: rgba(255, 42, 109, 0.12);
   --color-success: #05ffa1;
+  --color-success-dim: rgba(5, 255, 161, 0.12);
   --color-warning: #ffcc00;
-  --color-canvas-bg: #050508;
-  --color-grid-line: rgba(255, 255, 255, 0.05);
+  --color-warning-dim: rgba(255, 204, 0, 0.12);
+  --color-canvas-bg: #060610;
+  --color-grid-line: rgba(255, 255, 255, 0.04);
+  --color-shadow: rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -40,7 +48,7 @@ html, body, #root {
 
 /* Subtle pixel-grid background on empty areas */
 .bg-dotted {
-  background-image: radial-gradient(circle, var(--color-border-dark) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--color-border-subtle) 1px, transparent 1px);
   background-size: 8px 8px;
 }
 
@@ -49,20 +57,19 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-/* Blocky scrollbars */
+/* Refined scrollbars */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-dark);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border: 1px solid var(--color-bg-primary);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -78,23 +85,135 @@ input, button {
   font-family: 'VT323', monospace;
 }
 
-/* Retro 3D button / panel border effect */
-.outset {
-  border: 2px solid var(--color-border-light);
-  border-right-color: var(--color-border-dark);
-  border-bottom-color: var(--color-border-dark);
-  background: var(--color-surface);
-}
-
-.outset:active, .outset.pressed {
-  border: 2px solid var(--color-border-dark);
-  border-right-color: var(--color-border-light);
-  border-bottom-color: var(--color-border-light);
-}
-
-.inset {
-  border: 2px solid var(--color-border-dark);
-  border-right-color: var(--color-border-light);
-  border-bottom-color: var(--color-border-light);
+/* Panel styling - subtle with soft shadow */
+.panel {
+  border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
+  border-radius: 4px;
+}
+
+.panel-header {
+  padding: 6px 10px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 4px 4px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* Button styling - modern with subtle 3D feel */
+.btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-light);
+}
+
+.btn:active {
+  background: var(--color-surface-active);
+  transform: translateY(1px);
+}
+
+.btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.btn-ghost.active {
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-accent {
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-accent:hover {
+  background: var(--color-accent-glow);
+}
+
+.btn-danger {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: var(--color-danger-dim);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+/* Input styling */
+.input {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: 3px;
+  padding: 4px 8px;
+  color: var(--color-text-primary);
+  font-size: 18px;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-dim);
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 16px;
+  color: var(--color-text-primary);
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 12px var(--color-shadow);
+  white-space: nowrap;
+}
+
+/* Accent glow effect for active elements */
+.glow-accent {
+  box-shadow: 0 0 8px var(--color-accent-dim), 0 0 16px var(--color-accent-dim);
+}
+
+/* Smooth transitions for panel resizing */
+.transition-panel {
+  transition: width 0.2s ease, height 0.2s ease;
 }

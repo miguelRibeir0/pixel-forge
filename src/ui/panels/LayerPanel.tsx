@@ -1,4 +1,5 @@
 import useEditorStore from '../../store/editorStore';
+import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 
 export default function LayerPanel() {
   const project = useEditorStore(s => s.project);
@@ -22,62 +23,70 @@ export default function LayerPanel() {
 
   return (
     <div className="bg-bg-secondary flex flex-col flex-1 select-none min-h-0">
-      <div className="flex items-center justify-between px-2 py-1 border-b-2 border-border bg-bg-tertiary">
-        <span className="text-base text-text-secondary uppercase tracking-wider">LAYERS</span>
+      <div className="flex items-center justify-between panel-header">
+        <span>Layers</span>
         <button
           onClick={() => addLayer()}
-          className="w-6 h-6 text-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover flex items-center justify-center border border-transparent hover:border-border"
+          className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-accent hover:bg-accent-dim transition-colors"
           title="Add Layer"
         >
-          +
+          <Plus size={12} />
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {layers.map((layer) => (
-          <div
-            key={layer.id}
-            onClick={() => setActiveLayer(layer.id)}
-            className={`flex items-center gap-2 px-2 py-1 cursor-pointer border-b border-border transition-colors ${
-              layer.id === activeLayerId
-                ? 'bg-accent-dim border-l-4 border-l-accent'
-                : 'hover:bg-surface-hover border-l-4 border-l-transparent'
-            }`}
-          >
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
-              className={`w-5 h-5 text-base flex items-center justify-center ${layer.visible ? 'text-accent' : 'text-text-secondary/40'}`}
-              title={layer.visible ? 'Hide' : 'Show'}
+        {layers.map((layer) => {
+          const isActive = layer.id === activeLayerId;
+          return (
+            <div
+              key={layer.id}
+              onClick={() => setActiveLayer(layer.id)}
+              className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors border-l-2 ${
+                isActive
+                  ? 'bg-accent-dim border-l-accent'
+                  : 'border-l-transparent hover:bg-surface'
+              }`}
             >
-              {layer.visible ? '[+]' : '[-]'}
-            </button>
-            <span className={`text-base flex-1 truncate ${layer.id === activeLayerId ? 'text-text-primary' : 'text-text-secondary'}`}>
-              {layer.name}
-            </span>
-            <span className="text-sm text-text-secondary/50">
-              {Math.round(layer.opacity * 100)}%
-            </span>
-            {frame.layers.length > 1 && (
               <button
-                onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
-                className="w-5 h-5 text-base text-text-secondary/40 hover:text-danger flex items-center justify-center border border-transparent hover:border-danger"
-                title="Delete"
+                onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
+                className={`flex-shrink-0 transition-colors ${layer.visible ? 'text-text-secondary hover:text-accent' : 'text-text-muted/40'}`}
+                title={layer.visible ? 'Hide' : 'Show'}
               >
-                x
+                {layer.visible ? <Eye size={13} /> : <EyeOff size={13} />}
               </button>
-            )}
-          </div>
-        ))}
+              <span className={`text-sm flex-1 truncate ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>
+                {layer.name}
+              </span>
+              <span className="text-xs text-text-muted tabular-nums">
+                {Math.round(layer.opacity * 100)}%
+              </span>
+              {frame.layers.length > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
+                  className="flex-shrink-0 text-text-muted/40 hover:text-danger transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
       {activeLayerId && (
-        <div className="px-2 py-2 border-t-2 border-border">
-          <label className="text-sm text-text-secondary uppercase">OPACITY</label>
+        <div className="px-2 py-2 border-t border-border">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs text-text-muted uppercase tracking-wide">Opacity</label>
+            <span className="text-xs text-text-secondary tabular-nums">
+              {Math.round((frame.layers.find(l => l.id === activeLayerId)?.opacity ?? 1) * 100)}%
+            </span>
+          </div>
           <input
             type="range"
             min={0}
             max={100}
             value={frame.layers.find(l => l.id === activeLayerId)?.opacity ?? 1}
             onChange={(e) => setLayerOpacity(activeLayerId, parseInt(e.target.value) / 100)}
-            className="w-full h-2 accent-accent mt-1"
+            className="w-full h-1.5 accent-accent rounded-full appearance-none bg-surface cursor-pointer"
           />
         </div>
       )}

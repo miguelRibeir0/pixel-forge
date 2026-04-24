@@ -35,56 +35,56 @@ export default function Toolbar() {
   const toggleGrid = useEditorStore(s => s.toggleGrid);
 
   return (
-    <div className="w-14 bg-bg-secondary flex flex-col border-r-2 border-border select-none">
-      <div className="px-1 py-1 border-b-2 border-border bg-bg-tertiary">
-        <span className="text-base text-text-secondary uppercase tracking-wider">TOOLS</span>
-      </div>
-      <div className="flex flex-col items-center py-1 gap-0">
+    <div className="w-12 bg-bg-secondary flex flex-col border-r border-border select-none">
+      <div className="flex flex-col items-center py-1.5 gap-0.5">
         {TOOLS.map(tool => {
           const Icon = tool.icon;
+          const isActive = activeTool === tool.id;
           return (
             <button
               key={tool.id}
               onClick={() => setActiveTool(tool.id)}
-              className={`w-9 h-8 flex items-center justify-center transition-colors border-2 my-px ${
-                activeTool === tool.id
-                  ? 'border-accent text-accent'
-                  : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary border-transparent hover:border-border'
+              className={`w-8 h-8 flex items-center justify-center rounded transition-all duration-150 ${
+                isActive
+                  ? 'bg-accent-dim text-accent shadow-sm shadow-accent/20'
+                  : 'text-text-secondary hover:bg-surface hover:text-text-primary'
               }`}
               title={`${tool.label} (${tool.shortcut})`}
             >
-              <Icon size={16} strokeWidth={2} />
+              <Icon size={15} strokeWidth={isActive ? 2.5 : 2} />
             </button>
           );
         })}
       </div>
 
-      <div className="mx-2 h-px bg-border my-1" />
+      <div className="mx-2 h-px bg-border-subtle my-1" />
 
-      <div className="flex flex-col items-center gap-0 mx-1 border-2 border-border">
+      <div className="flex flex-col items-center gap-0.5 mx-1.5">
         <button
           onClick={() => setBrushSize(Math.max(1, brushSize - 1))}
-          className="w-full h-6 text-base text-text-secondary hover:bg-surface-hover hover:text-text-primary flex items-center justify-center border-b border-border"
+          className="w-full h-6 text-sm text-text-muted hover:text-text-primary hover:bg-surface flex items-center justify-center rounded transition-colors"
           title="Decrease brush"
         >
-          -
+          −
         </button>
-        <span className="text-base text-text-primary py-0.5">{brushSize}</span>
+        <span className="text-sm text-text-primary font-bold">{brushSize}</span>
         <button
           onClick={() => setBrushSize(Math.min(32, brushSize + 1))}
-          className="w-full h-6 text-base text-text-secondary hover:bg-surface-hover hover:text-text-primary flex items-center justify-center border-t border-border"
+          className="w-full h-6 text-sm text-text-muted hover:text-text-primary hover:bg-surface flex items-center justify-center rounded transition-colors"
           title="Increase brush"
         >
           +
         </button>
       </div>
 
-      <div className="mx-2 h-px bg-border my-1" />
+      <div className="mx-2 h-px bg-border-subtle my-1" />
 
       <button
         onClick={toggleGrid}
-        className={`mx-1 h-7 flex items-center justify-center text-sm border-2 transition-colors ${
-          showGrid ? 'bg-accent-dim text-accent border-accent' : 'text-text-secondary hover:bg-surface-hover border-transparent hover:border-border'
+        className={`mx-1.5 h-7 flex items-center justify-center text-xs rounded transition-all duration-150 ${
+          showGrid
+            ? 'bg-accent-dim text-accent border border-accent/30'
+            : 'text-text-muted hover:bg-surface hover:text-text-secondary border border-transparent'
         }`}
         title="Toggle Grid"
       >

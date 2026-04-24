@@ -19,13 +19,13 @@ export default function ColorPalette() {
   };
 
   return (
-    <div className="bg-bg-secondary border-b-2 border-border select-none">
-      <div className="px-2 py-1 border-b-2 border-border bg-bg-tertiary">
-        <span className="text-base text-text-secondary uppercase tracking-wider">{project.palette.name}</span>
+    <div className="bg-bg-secondary select-none">
+      <div className="panel-header">
+        <span>{project.palette.name}</span>
       </div>
       <div className="p-2">
         <div
-          className="grid gap-px border-2 border-border p-px bg-border"
+          className="grid gap-px rounded overflow-hidden"
           style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(colors.length))}, 1fr)` }}
         >
           {colors.map((color, index) => (
@@ -33,27 +33,28 @@ export default function ColorPalette() {
               key={index}
               onClick={(e) => handleClick(index, e)}
               onContextMenu={(e) => e.preventDefault()}
-              className={`w-7 h-7 transition-all ${
+              className={`aspect-square transition-all duration-100 ${
                 index === activeColorIndex
-                  ? 'outline outline-2 outline-white outline-offset-0 z-10'
+                  ? 'ring-2 ring-white ring-inset scale-110 z-10 relative'
                   : index === secondaryColorIndex
-                  ? 'outline outline-2 outline-text-secondary outline-offset-0'
-                  : ''
+                  ? 'ring-2 ring-text-secondary ring-inset'
+                  : 'hover:scale-105'
               }`}
               style={{ backgroundColor: color }}
               title={color}
             />
           ))}
         </div>
-        <div className="flex items-center gap-4 mt-2">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-border" style={{ backgroundColor: colors[activeColorIndex] }} />
-            <span className="text-base text-text-secondary">FG</span>
+        <div className="flex items-center gap-3 mt-2 px-0.5">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colors[activeColorIndex] }} />
+            <span className="text-xs text-text-muted">FG</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-text-secondary" style={{ backgroundColor: colors[secondaryColorIndex] }} />
-            <span className="text-base text-text-secondary">BG</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-sm border border-border" style={{ backgroundColor: colors[secondaryColorIndex] }} />
+            <span className="text-xs text-text-muted">BG</span>
           </div>
+          <span className="text-xs text-text-muted ml-auto">{colors.length} colors</span>
         </div>
       </div>
     </div>
