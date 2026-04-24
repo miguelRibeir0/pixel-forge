@@ -1,17 +1,17 @@
 import useEditorStore from '../../store/editorStore';
 import type { ToolType } from '../../types';
 
-const TOOLS: { id: ToolType; label: string; icon: string }[] = [
-  { id: 'pencil', label: 'Pencil', icon: '✏' },
-  { id: 'eraser', label: 'Eraser', icon: '⌫' },
-  { id: 'bucket', label: 'Fill', icon: '🪣' },
-  { id: 'eyedropper', label: 'Picker', icon: '💉' },
-  { id: 'line', label: 'Line', icon: '╲' },
-  { id: 'rectangle', label: 'Rect', icon: '▢' },
-  { id: 'ellipse', label: 'Ellipse', icon: '○' },
-  { id: 'selection', label: 'Select', icon: '⬚' },
-  { id: 'move', label: 'Move', icon: '✥' },
-  { id: 'dither', label: 'Dither', icon: '▦' },
+const TOOLS: { id: ToolType; label: string; icon: string; shortcut: string }[] = [
+  { id: 'pencil', label: 'Pencil', icon: '✏', shortcut: 'B' },
+  { id: 'eraser', label: 'Eraser', icon: '⌫', shortcut: 'E' },
+  { id: 'bucket', label: 'Fill', icon: '🪣', shortcut: 'G' },
+  { id: 'eyedropper', label: 'Picker', icon: '💉', shortcut: 'I' },
+  { id: 'line', label: 'Line', icon: '╲', shortcut: 'L' },
+  { id: 'rectangle', label: 'Rect', icon: '▢', shortcut: 'R' },
+  { id: 'ellipse', label: 'Ellipse', icon: '○', shortcut: 'Shift+R' },
+  { id: 'selection', label: 'Select', icon: '⬚', shortcut: 'S' },
+  { id: 'move', label: 'Move', icon: '✥', shortcut: 'M' },
+  { id: 'dither', label: 'Dither', icon: '▦', shortcut: 'D' },
 ];
 
 export default function Toolbar() {
@@ -33,7 +33,7 @@ export default function Toolbar() {
               ? 'bg-accent text-white shadow-lg shadow-accent/30'
               : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
           }`}
-          title={tool.label}
+          title={`${tool.label} (${tool.shortcut})`}
         >
           {tool.icon}
         </button>

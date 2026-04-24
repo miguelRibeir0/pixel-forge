@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import type { Project, Frame, Layer, CanvasState, ToolType, Command, PixelDiff, PixelDocument } from '../types';
+import type { Project, Frame, Layer, CanvasState, ToolType, Command, PixelDiff, PixelDocument, SelectionState } from '../types';
 import { PICO_8 } from '../editor/palette';
 
 interface EditorState {
@@ -17,8 +17,12 @@ interface EditorState {
   redoStack: Command[];
   isDrawing: boolean;
   lastPixel: { x: number; y: number } | null;
+  cursorPixel: { x: number; y: number } | null;
+  selection: SelectionState;
+  previewPixels: PixelDiff[] | null;
 
   setProject: (project: Project) => void;
+  clearProject: () => void;
   createProject: (name: string, width: number, height: number) => void;
   setActiveDocument: (id: string) => void;
   setActiveFrame: (id: string) => void;
@@ -29,9 +33,13 @@ interface EditorState {
   setBrushSize: (size: number) => void;
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
+  setFitMode: (fit: boolean) => void;
   toggleGrid: () => void;
   setDrawing: (val: boolean) => void;
   setLastPixel: (pos: { x: number; y: number } | null) => void;
+  setCursorPixel: (pos: { x: number; y: number } | null) => void;
+  setSelection: (sel: SelectionState) => void;
+  setPreviewPixels: (pixels: PixelDiff[] | null) => void;
 
   addLayer: (name?: string) => void;
   removeLayer: (layerId: string) => void;
@@ -100,15 +108,52 @@ const useEditorStore = create<EditorState>((set, get) => ({
     zoom: 8,
     panX: 0,
     panY: 0,
-    showGrid: true,
-    gridOpacity: 0.15,
+    showGrid: false,
+    gridOpacity: 0.25,
+    fitMode: true,
   },
   undoStack: [],
   redoStack: [],
   isDrawing: false,
   lastPixel: null,
+  cursorPixel: null,
+  selection: null,
+  previewPixels: null,
 
-  setProject: (project) => set({ project }),
+  setProject: (project) => {
+    const doc = project.documents[0];
+    const frame = doc?.frames[0];
+    const layer = frame?.layers[frame.layers.length - 1];
+    const updates: Partial<EditorState> = {
+      project,
+      activeDocumentId: project.activeDocumentId ?? doc?.id ?? null,
+      activeFrameId: frame?.id ?? null,
+      activeLayerId: layer?.id ?? null,
+      undoStack: [],
+      redoStack: [],
+      selection: null,
+      previewPixels: null,
+      isDrawing: false,
+      lastPixel: null,
+      cursorPixel: null,
+    };
+    if (project.canvasState) {
+      updates.canvas = project.canvasState;
+    }
+    set(updates);
+  },
+  clearProject: () => set({
+    project: null,
+    activeDocumentId: null,
+    activeFrameId: null,
+    activeLayerId: null,
+    undoStack: [],
+    redoStack: [],
+    selection: null,
+    previewPixels: null,
+    isDrawing: false,
+    lastPixel: null,
+  }),
 
   createProject: (name, width, height) => {
     const doc = createEmptyDocument(width, height);
@@ -147,11 +192,15 @@ const useEditorStore = create<EditorState>((set, get) => ({
   setSecondaryColorIndex: (index) => set({ secondaryColorIndex: index }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setBrushSize: (size) => set({ brushSize: size }),
-  setZoom: (zoom) => set(s => ({ canvas: { ...s.canvas, zoom: Math.min(3200, Math.max(1, zoom)) } })),
+  setZoom: (zoom) => set(s => ({ canvas: { ...s.canvas, zoom: Math.min(3200, Math.max(1, zoom)), fitMode: false } })),
   setPan: (x, y) => set(s => ({ canvas: { ...s.canvas, panX: x, panY: y } })),
+  setFitMode: (fit) => set(s => ({ canvas: { ...s.canvas, fitMode: fit } })),
   toggleGrid: () => set(s => ({ canvas: { ...s.canvas, showGrid: !s.canvas.showGrid } })),
   setDrawing: (val) => set({ isDrawing: val }),
   setLastPixel: (pos) => set({ lastPixel: pos }),
+  setCursorPixel: (pos) => set({ cursorPixel: pos }),
+  setSelection: (sel) => set({ selection: sel }),
+  setPreviewPixels: (pixels) => set({ previewPixels: pixels }),
 
   addLayer: (name) => {
     const state = get();
@@ -352,7 +401,31 @@ const useEditorStore = create<EditorState>((set, get) => ({
     if (state.undoStack.length === 0) return;
     const cmd = state.undoStack[state.undoStack.length - 1];
     const newUndo = state.undoStack.slice(0, -1);
-    set({ undoStack: newUndo, redoStack: [...state.redoStack, cmd] });
+
+    if (!state.project) return;
+    const newProject = { ...state.project, updatedAt: Date.now() };
+    newProject.documents = newProject.documents.map(doc => {
+      const newDoc = { ...doc };
+      newDoc.frames = newDoc.frames.map(frame => {
+        if (frame.id !== cmd.frameId) return frame;
+        const newFrame = { ...frame };
+        newFrame.layers = frame.layers.map(layer => {
+          if (layer.id !== cmd.layerId) return layer;
+          const newPixels = new Uint8Array(layer.pixels);
+          for (const diff of cmd.diffs) {
+            const idx = diff.y * doc.width + diff.x;
+            if (idx >= 0 && idx < newPixels.length) {
+              newPixels[idx] = diff.oldIndex;
+            }
+          }
+          return { ...layer, pixels: newPixels };
+        });
+        return newFrame;
+      });
+      return newDoc;
+    });
+
+    set({ project: newProject, undoStack: newUndo, redoStack: [...state.redoStack, cmd] });
   },
 
   redo: () => {
@@ -360,7 +433,31 @@ const useEditorStore = create<EditorState>((set, get) => ({
     if (state.redoStack.length === 0) return;
     const cmd = state.redoStack[state.redoStack.length - 1];
     const newRedo = state.redoStack.slice(0, -1);
-    set({ redoStack: newRedo, undoStack: [...state.undoStack, cmd] });
+
+    if (!state.project) return;
+    const newProject = { ...state.project, updatedAt: Date.now() };
+    newProject.documents = newProject.documents.map(doc => {
+      const newDoc = { ...doc };
+      newDoc.frames = newDoc.frames.map(frame => {
+        if (frame.id !== cmd.frameId) return frame;
+        const newFrame = { ...frame };
+        newFrame.layers = frame.layers.map(layer => {
+          if (layer.id !== cmd.layerId) return layer;
+          const newPixels = new Uint8Array(layer.pixels);
+          for (const diff of cmd.diffs) {
+            const idx = diff.y * doc.width + diff.x;
+            if (idx >= 0 && idx < newPixels.length) {
+              newPixels[idx] = diff.newIndex;
+            }
+          }
+          return { ...layer, pixels: newPixels };
+        });
+        return newFrame;
+      });
+      return newDoc;
+    });
+
+    set({ project: newProject, redoStack: newRedo, undoStack: [...state.undoStack, cmd] });
   },
 
   pushCommand: (cmd) => set(s => ({ undoStack: [...s.undoStack, cmd], redoStack: [] })),

@@ -19,7 +19,7 @@ export class CanvasRenderer {
 
   render() {
     const state = useEditorStore.getState();
-    const { project, activeDocumentId, activeFrameId, canvas } = state;
+    const { project, activeDocumentId, activeFrameId } = state;
     if (!project || !activeDocumentId || !activeFrameId) return;
 
     const doc = project.documents.find(d => d.id === activeDocumentId);
@@ -27,8 +27,29 @@ export class CanvasRenderer {
     const frame = doc.frames.find(f => f.id === activeFrameId);
     if (!frame) return;
 
-    const { zoom, panX, panY, showGrid, gridOpacity } = canvas;
+    let { showGrid, gridOpacity, fitMode, zoom, panX, panY } = state.canvas;
     const { width: docW, height: docH } = doc;
+
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+
+    if (fitMode && canvasWidth > 0 && canvasHeight > 0) {
+      const padding = 40;
+      const availW = canvasWidth - padding * 2;
+      const availH = canvasHeight - padding * 2;
+      const newZoom = Math.max(1, Math.min(availW / docW, availH / docH));
+      const newPanX = (canvasWidth - docW * newZoom) / 2;
+      const newPanY = (canvasHeight - docH * newZoom) / 2;
+
+      if (zoom !== newZoom || panX !== newPanX || panY !== newPanY) {
+        zoom = newZoom;
+        panX = newPanX;
+        panY = newPanY;
+        useEditorStore.setState({
+          canvas: { ...state.canvas, zoom, panX, panY },
+        });
+      }
+    }
 
     this.offscreenCanvas.width = docW;
     this.offscreenCanvas.height = docH;
@@ -53,8 +74,6 @@ export class CanvasRenderer {
     this.offscreenCtx.globalAlpha = 1;
     this.offscreenCtx.globalCompositeOperation = 'source-over';
 
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
     this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     this.ctx.imageSmoothingEnabled = false;
 
@@ -66,8 +85,82 @@ export class CanvasRenderer {
     const destH = docH * zoom;
     this.ctx.drawImage(this.offscreenCanvas, destX, destY, destW, destH);
 
-    if (showGrid && zoom >= 4) {
+    if (showGrid) {
       this.drawGrid(destX, destY, docW, docH, zoom, gridOpacity);
+    }
+
+    const preview = state.previewPixels;
+    if (preview && preview.length > 0) {
+      for (const p of preview) {
+        if (p.x < 0 || p.y < 0 || p.x >= docW || p.y >= docH) continue;
+        if (p.newIndex === 0) continue;
+        const color = palette[p.newIndex] || '#000000';
+        this.ctx.fillStyle = color;
+        this.ctx.globalAlpha = 0.6;
+        this.ctx.fillRect(destX + p.x * zoom, destY + p.y * zoom, zoom, zoom);
+      }
+      this.ctx.globalAlpha = 1;
+    }
+
+    const sel = state.selection;
+    if (sel) {
+      this.ctx.strokeStyle = '#7c3aed';
+      this.ctx.lineWidth = 2;
+      this.ctx.setLineDash([4, 4]);
+      this.ctx.strokeRect(
+        destX + sel.x * zoom,
+        destY + sel.y * zoom,
+        sel.width * zoom,
+        sel.height * zoom
+      );
+      this.ctx.setLineDash([]);
+    }
+
+    const cursor = state.cursorPixel;
+    const tool = state.activeTool;
+    if (cursor) {
+      const half = Math.floor(state.brushSize / 2);
+      const bx = cursor.x - half;
+      const by = cursor.y - half;
+      const bw = state.brushSize;
+      const bh = state.brushSize;
+      const minSize = Math.max(bw * zoom, 6);
+      const rx = destX + bx * zoom;
+      const ry = destY + by * zoom;
+      const rw = bw * zoom;
+      const rh = bh * zoom;
+
+      if (tool === 'eraser') {
+        this.ctx.globalAlpha = 0.4;
+        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([4, 4]);
+        this.ctx.strokeRect(rx, ry, Math.max(rw, minSize), Math.max(rh, minSize));
+        this.ctx.setLineDash([]);
+        this.ctx.globalAlpha = 1;
+      } else if (['pencil', 'dither', 'line', 'rectangle', 'ellipse'].includes(tool)) {
+        const color = palette[state.activeColorIndex] || '#ffffff';
+        this.ctx.globalAlpha = 0.3;
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(rx, ry, Math.max(rw, minSize), Math.max(rh, minSize));
+        this.ctx.globalAlpha = 0.8;
+        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(rx + 0.5, ry + 0.5, Math.max(rw, minSize) - 1, Math.max(rh, minSize) - 1);
+        this.ctx.globalAlpha = 1;
+      } else {
+        const size = Math.max(zoom, 6);
+        const cx = destX + cursor.x * zoom + zoom / 2;
+        const cy = destY + cursor.y * zoom + zoom / 2;
+        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx - size / 2, cy);
+        this.ctx.lineTo(cx + size / 2, cy);
+        this.ctx.moveTo(cx, cy - size / 2);
+        this.ctx.lineTo(cx, cy + size / 2);
+        this.ctx.stroke();
+      }
     }
   }
 

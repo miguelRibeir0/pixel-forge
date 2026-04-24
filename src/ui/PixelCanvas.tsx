@@ -12,13 +12,36 @@ export default function PixelCanvas() {
 
   const activeTool = useEditorStore(s => s.activeTool);
   const zoom = useEditorStore(s => s.canvas.zoom);
+  const fitMode = useEditorStore(s => s.canvas.fitMode);
   const project = useEditorStore(s => s.project);
   const setZoom = useEditorStore(s => s.setZoom);
   const setPan = useEditorStore(s => s.setPan);
   const isDrawing = useEditorStore(s => s.isDrawing);
+  const previewPixels = useEditorStore(s => s.previewPixels);
+  const cursorPixel = useEditorStore(s => s.cursorPixel);
   const panRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
+  const spaceHeld = useRef(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        spaceHeld.current = true;
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') spaceHeld.current = false;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     toolRef.current = createToolHandler(activeTool);
@@ -32,7 +55,7 @@ export default function PixelCanvas() {
   useEffect(() => {
     if (!rendererRef.current) return;
     rendererRef.current.render();
-  }, [project, zoom, isDrawing]);
+  }, [project, zoom, isDrawing, fitMode, previewPixels, cursorPixel]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -53,9 +76,10 @@ export default function PixelCanvas() {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    if (e.button === 1 || (e.button === 0 && (e.altKey || spaceHeld.current))) {
       isPanning.current = true;
       lastMouse.current = { x: e.clientX, y: e.clientY };
+      if (canvasRef.current) canvasRef.current.style.cursor = 'grabbing';
       return;
     }
     if (!rendererRef.current) return;
@@ -78,9 +102,15 @@ export default function PixelCanvas() {
     }
     if (!rendererRef.current) return;
     const pos = rendererRef.current.screenToCanvas(e.clientX, e.clientY);
+    useEditorStore.getState().setCursorPixel(pos);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = pos ? 'none' : 'default';
+    }
     if (pos && useEditorStore.getState().isDrawing) {
       toolRef.current?.onMouseMove(pos.x, pos.y);
     }
+    rendererRef.current.render();
   }, [setPan]);
 
   const handleMouseUp = useCallback(() => {
@@ -91,11 +121,32 @@ export default function PixelCanvas() {
     toolRef.current?.onMouseUp();
   }, []);
 
+  const handleMouseLeave = useCallback(() => {
+    useEditorStore.getState().setCursorPixel(null);
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = 'default';
+    }
+    if (isPanning.current) {
+      isPanning.current = false;
+    }
+    toolRef.current?.onMouseUp();
+  }, []);
+
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const state = useEditorStore.getState();
     const delta = e.deltaY > 0 ? -1 : 1;
-    const newZoom = Math.min(3200, Math.max(1, state.canvas.zoom + delta * (state.canvas.zoom < 16 ? 1 : state.canvas.zoom < 64 ? 4 : 8)));
+
+    if (e.altKey) {
+      const newBrush = Math.max(1, Math.min(32, state.brushSize + delta));
+      state.setBrushSize(newBrush);
+      rendererRef.current?.render();
+      return;
+    }
+
+    const currentZoom = state.canvas.zoom;
+    const step = currentZoom < 16 ? 1 : currentZoom < 64 ? 4 : 8;
+    const newZoom = Math.min(3200, Math.max(1, Math.round(currentZoom) + delta * step));
     setZoom(newZoom);
     rendererRef.current?.render();
   }, [setZoom]);
@@ -104,24 +155,37 @@ export default function PixelCanvas() {
     e.preventDefault();
   }, []);
 
-  requestAnimationFrame(() => {
-    rendererRef.current?.render();
-  });
+  const displayZoom = fitMode ? zoom.toFixed(1) : zoom;
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden relative bg-canvas-bg cursor-crosshair">
+    <div ref={containerRef} className="flex-1 overflow-hidden relative bg-canvas-bg">
       <canvas
         ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}
         onContextMenu={handleContextMenu}
         className="absolute inset-0"
       />
-      <div className="absolute bottom-2 right-2 text-xs text-text-secondary bg-bg-primary/80 px-2 py-1 rounded">
-        {zoom}x
+      <div className="absolute bottom-2 right-2 flex items-center gap-2">
+        <button
+          onClick={() => {
+            const s = useEditorStore.getState();
+            useEditorStore.setState({ canvas: { ...s.canvas, fitMode: !s.canvas.fitMode } });
+            rendererRef.current?.render();
+          }}
+          className={`text-xs px-2 py-1 rounded transition-colors ${
+            fitMode ? 'bg-accent text-white' : 'bg-bg-primary/80 text-text-secondary hover:text-text-primary'
+          }`}
+          title="Fit canvas to view"
+        >
+          Fit
+        </button>
+        <span className="text-xs text-text-secondary bg-bg-primary/80 px-2 py-1 rounded">
+          {displayZoom}x
+        </span>
       </div>
     </div>
   );

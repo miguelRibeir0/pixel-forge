@@ -52,6 +52,7 @@ export interface Project {
   palette: Palette;
   documents: PixelDocument[];
   activeDocumentId: string | null;
+  canvasState?: CanvasState;
   createdAt: number;
   updatedAt: number;
 }
@@ -62,7 +63,17 @@ export interface CanvasState {
   panY: number;
   showGrid: boolean;
   gridOpacity: number;
+  fitMode: boolean;
 }
+
+export interface SelectionRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type SelectionState = SelectionRect | null;
 
 export interface PixelDiff {
   x: number;

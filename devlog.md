@@ -39,10 +39,90 @@
 - Build compiles clean — TypeScript and Vite build succeed
 
 ### Next steps
-- [ ] IndexedDB autosave (using `idb` lib)
 - [ ] PNG export
 - [ ] Animation playback preview
 - [ ] Onion skinning
-- [ ] More tools (line, rectangle, ellipse, selection, move, dither)
-- [ ] Keyboard shortcuts
 - [ ] AI integration (Phase 3)
+
+## Day 2 — Tools, Shortcuts, Autosave
+
+**Goals:** Fit-to-container canvas, fix undo/redo, implement all tools, keyboard shortcuts, IndexedDB autosave.
+
+### Milestones
+- [x] Canvas fit-to-container mode (auto-zooms to fill available space, centers document)
+- [x] Fit toggle button in canvas corner, zoom indicator shows fractional zoom in fit mode
+- [x] Fixed undo/redo — now actually applies pixel diffs (was broken, just moved commands between stacks)
+- [x] New tools: Line, Rectangle, Ellipse, Selection, Move, Dither
+- [x] Shape tools (Line, Rect, Ellipse) have live preview overlay during drag
+- [x] Selection tool with visual dashed border
+- [x] Move tool — moves layer contents with snapshot/restore
+- [x] Dither tool — checkerboard pattern brush
+- [x] All tools push undo commands on completion
+- [x] Preview pixel system for shape tools (semi-transparent overlay)
+- [x] Keyboard shortcuts: B/E/G/I/L/R/M/V/D for tools, Ctrl+Z/Ctrl+Shift+Z undo/redo, +/- zoom, X swap colors, [/] brush size, H grid, Esc clear selection
+- [x] Shortcut hints in toolbar tooltips
+- [x] IndexedDB autosave via `idb` library (debounced 1s, loads last project on start)
+- [x] Loading screen while checking for saved projects
+- [x] `SelectionRect` and `SelectionState` types added
+
+### Architecture changes
+- **Types:** Added `SelectionRect`, `SelectionState` to `src/types/index.ts`
+- **Store:** Added `fitMode`, `previewPixels`, `selection` state; `setFitMode`, `setPreviewPixels`, `setSelection` actions
+- **Renderer:** Fit-to-container zoom calculation, preview pixel overlay, selection rectangle rendering
+- **Tools:** Complete rewrite — 10 tools all with undo support, preview system for shapes
+- **Storage:** New `src/storage/indexeddb.ts` — save/load/list/delete projects
+- **Shortcuts:** New `src/editor/shortcuts.ts` — keyboard shortcut hook
+
+### Notes
+- Fit mode calculates zoom as `min(availW/docW, availH/docH)` with 40px padding
+- Manual zoom (scroll wheel) automatically disables fit mode
+- Preview pixels rendered at 60% opacity as overlay
+- Move tool uses snapshot approach — copies entire layer on mouseDown, restores on mouseUp
+- Autosave triggers on any project state change, debounced to 1s
+
+## Day 3 — Project Management, Overlays, Persistence Fixes
+
+**Goals:** Project selector UI, cursor overlays, selection-aware tools, persistence fixes.
+
+### Milestones
+- [x] Project selector UI with Recent/New tabs
+- [x] Recent projects list with load/delete, sorted by last updated
+- [x] New project tab with name + size presets
+- [x] Click project name in editor header to go back to selector
+- [x] Cursor overlay system — brush preview on canvas
+- [x] Overlay has minimum 6px visual size (visible at any zoom)
+- [x] Red border on brush overlay (1px width)
+- [x] Cursor hidden over document area, visible outside
+- [x] Grabbing cursor when panning
+- [x] Space + drag to pan canvas (alongside middle-click and Alt+click)
+- [x] Alt + scroll wheel to change brush size
+- [x] Selection-aware bucket fill — flood fill constrained to selection bounds
+- [x] Selection-aware move tool — only moves pixels within selection
+- [x] Move tool disabled when no selection exists
+- [x] Move tool updates selection position after moving
+- [x] Canvas state persistence — showGrid, zoom, pan, fitMode saved with project
+- [x] Fixed major persistence bug — `setProject` now restores activeDocumentId/activeFrameId/activeLayerId
+- [x] Save system overhaul — immediate saves, no debounce
+- [x] `pagehide` and `visibilitychange` handlers for reliable save on refresh/close
+- [x] `saveProjectSync` for beforeunload scenarios
+- [x] JSON dedup check to avoid redundant IndexedDB writes
+- [x] New projects saved immediately on creation
+- [x] Grid default changed to off
+- [x] Updated shortcuts: S=selection, M=move (was M=selection, V=move)
+
+### Architecture changes
+- **Types:** Added `canvasState?: CanvasState` to Project type
+- **Store:** Added `cursorPixel` state, `setCursorPixel`, `clearProject` actions; `setProject` now restores full editor state
+- **Renderer:** Cursor overlay with minimum size, red border, crosshair for non-draw tools
+- **Storage:** Rewrote save system — `saveProject` with JSON dedup, `saveProjectSync` for sync contexts, removed debounce
+- **UI:** New `ProjectSelector` component, dynamic cursor toggling in PixelCanvas
+- **Tools:** BucketTool accepts optional selection bounds, MoveTool requires selection
+
+### Bug fixes
+- Undo/redo was only moving commands between stacks, not applying diffs (fixed Day 2, verified)
+- Canvas fit mode caused infinite re-render loop — added value change guard
+- Grid disappeared on refresh — canvas state not persisted, active IDs not restored
+- Drawings disappeared on refresh — `setProject` didn't restore active document/frame/layer
+- Async IndexedDB save didn't complete before page unload — switched to immediate saves + pagehide handler
+- Cursor overlay invisible at low zoom — added minimum visual size
+- Browser cursor hidden everywhere — now only hidden over document area
