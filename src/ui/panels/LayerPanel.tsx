@@ -21,12 +21,12 @@ export default function LayerPanel() {
   const layers = [...frame.layers].reverse();
 
   return (
-    <div className="bg-surface border-l border-border flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Layers</span>
+    <div className="bg-bg-secondary flex flex-col flex-1 select-none min-h-0">
+      <div className="flex items-center justify-between px-2 py-1 border-b-2 border-border bg-bg-tertiary">
+        <span className="text-base text-text-secondary uppercase tracking-wider">LAYERS</span>
         <button
           onClick={() => addLayer()}
-          className="w-6 h-6 rounded text-sm text-text-secondary hover:text-text-primary hover:bg-surface-hover flex items-center justify-center"
+          className="w-6 h-6 text-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover flex items-center justify-center border border-transparent hover:border-border"
           title="Add Layer"
         >
           +
@@ -37,47 +37,47 @@ export default function LayerPanel() {
           <div
             key={layer.id}
             onClick={() => setActiveLayer(layer.id)}
-            className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer border-b border-border/50 transition-colors ${
+            className={`flex items-center gap-2 px-2 py-1 cursor-pointer border-b border-border transition-colors ${
               layer.id === activeLayerId
-                ? 'bg-accent/15 border-l-2 border-l-accent'
-                : 'hover:bg-surface-hover border-l-2 border-l-transparent'
+                ? 'bg-accent-dim border-l-4 border-l-accent'
+                : 'hover:bg-surface-hover border-l-4 border-l-transparent'
             }`}
           >
             <button
               onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
-              className={`w-5 h-5 text-xs flex items-center justify-center ${layer.visible ? 'text-accent' : 'text-text-secondary/40'}`}
+              className={`w-5 h-5 text-base flex items-center justify-center ${layer.visible ? 'text-accent' : 'text-text-secondary/40'}`}
               title={layer.visible ? 'Hide' : 'Show'}
             >
-              {layer.visible ? '◆' : '◇'}
+              {layer.visible ? '[+]' : '[-]'}
             </button>
-            <span className={`text-xs flex-1 truncate ${layer.id === activeLayerId ? 'text-text-primary' : 'text-text-secondary'}`}>
+            <span className={`text-base flex-1 truncate ${layer.id === activeLayerId ? 'text-text-primary' : 'text-text-secondary'}`}>
               {layer.name}
             </span>
-            <span className="text-[10px] text-text-secondary/50">
+            <span className="text-sm text-text-secondary/50">
               {Math.round(layer.opacity * 100)}%
             </span>
             {frame.layers.length > 1 && (
               <button
                 onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
-                className="w-4 h-4 text-xs text-text-secondary/40 hover:text-danger flex items-center justify-center"
+                className="w-5 h-5 text-base text-text-secondary/40 hover:text-danger flex items-center justify-center border border-transparent hover:border-danger"
                 title="Delete"
               >
-                ×
+                x
               </button>
             )}
           </div>
         ))}
       </div>
       {activeLayerId && (
-        <div className="px-3 py-2 border-t border-border">
-          <label className="text-[10px] text-text-secondary uppercase">Opacity</label>
+        <div className="px-2 py-2 border-t-2 border-border">
+          <label className="text-sm text-text-secondary uppercase">OPACITY</label>
           <input
             type="range"
             min={0}
             max={100}
             value={frame.layers.find(l => l.id === activeLayerId)?.opacity ?? 1}
             onChange={(e) => setLayerOpacity(activeLayerId, parseInt(e.target.value) / 100)}
-            className="w-full h-1 accent-accent mt-1"
+            className="w-full h-2 accent-accent mt-1"
           />
         </div>
       )}

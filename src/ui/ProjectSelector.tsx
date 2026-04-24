@@ -41,43 +41,41 @@ export default function ProjectSelector() {
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-bg-primary">
-      <div className="bg-surface rounded-xl p-8 max-w-lg w-full shadow-2xl border border-border">
-        <h1 className="text-2xl font-bold text-text-primary mb-1 tracking-tight">
-          Pixel Forge
-        </h1>
-        <p className="text-sm text-text-secondary mb-6">
-          16-bit pixel art studio for game developers
-        </p>
+    <div className="w-full h-full flex items-center justify-center bg-bg-primary bg-dotted">
+      <div className="inset p-6 max-w-xl w-full">
+        <div className="text-center mb-6">
+          <h1 className="text-5xl text-accent tracking-widest mb-1">PIXEL FORGE</h1>
+          <p className="text-lg text-text-secondary">16-BIT PIXEL ART STUDIO</p>
+        </div>
 
-        <div className="flex gap-1 mb-5">
+        <div className="flex gap-0 mb-4 border-2 border-border bg-bg-secondary">
           <button
             onClick={() => setTab('recent')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`flex-1 py-1 text-lg transition-colors border-r-2 border-border ${
               tab === 'recent'
-                ? 'bg-accent text-white'
-                : 'bg-bg-primary text-text-secondary hover:text-text-primary'
+                ? 'bg-accent text-bg-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
             }`}
           >
-            Recent Projects
+            &gt; RECENT
           </button>
           <button
             onClick={() => setTab('new')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`flex-1 py-1 text-lg transition-colors ${
               tab === 'new'
-                ? 'bg-accent text-white'
-                : 'bg-bg-primary text-text-secondary hover:text-text-primary'
+                ? 'bg-accent text-bg-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
             }`}
           >
-            New Project
+            &gt; NEW
           </button>
         </div>
 
         {tab === 'recent' ? (
-          <div className="space-y-1 max-h-64 overflow-y-auto">
+          <div className="border-2 border-border bg-bg-secondary max-h-72 overflow-y-auto">
             {projects.length === 0 ? (
-              <p className="text-sm text-text-secondary text-center py-8">
-                No saved projects yet. Create one to get started.
+              <p className="text-lg text-text-secondary text-center py-10">
+                NO SAVED PROJECTS. CREATE ONE TO START.
               </p>
             ) : (
               projects.map(project => {
@@ -86,20 +84,20 @@ export default function ProjectSelector() {
                   <div
                     key={project.id}
                     onClick={() => handleLoad(project)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-bg-primary hover:bg-surface-hover cursor-pointer group transition-colors"
+                    className="flex items-center justify-between px-3 py-2 bg-bg-secondary hover:bg-surface-hover cursor-pointer group transition-colors border-b border-border last:border-b-0"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-text-primary font-medium truncate">{project.name}</div>
-                      <div className="text-[10px] text-text-secondary/60">
-                        {doc ? `${doc.width}×${doc.height}` : '—'} · {formatDate(project.updatedAt)}
+                      <div className="text-lg text-text-primary truncate">&gt; {project.name}</div>
+                      <div className="text-base text-text-secondary pl-4">
+                        {doc ? `${doc.width}x${doc.height}` : '-'} / {formatDate(project.updatedAt)}
                       </div>
                     </div>
                     <button
                       onClick={(e) => handleDelete(project.id, e)}
-                      className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-red-400 text-xs px-2 py-1 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-danger text-lg px-2 py-1 transition-opacity border border-transparent hover:border-danger"
                       title="Delete project"
                     >
-                      ✕
+                      [X]
                     </button>
                   </div>
                 );
@@ -109,67 +107,67 @@ export default function ProjectSelector() {
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold block mb-1">
-                Project Name
+              <label className="text-lg uppercase tracking-wider text-text-secondary block mb-1">
+                PROJECT NAME
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
+                className="w-full inset px-3 py-1 text-lg text-text-primary focus:outline-none focus:border-accent"
                 placeholder="My Project"
               />
             </div>
 
             <div>
-              <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold block mb-1">
-                Canvas Size
+              <label className="text-lg uppercase tracking-wider text-text-secondary block mb-1">
+                CANVAS SIZE
               </label>
-              <div className="flex gap-2 flex-wrap">
-                {SIZES.map(size => (
+              <div className="flex gap-0 flex-wrap border-2 border-border">
+                {SIZES.map((size) => (
                   <button
                     key={size}
                     onClick={() => { setWidth(size); setHeight(size); setCustomSize(false); }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex-1 py-1 text-lg transition-colors border-r-2 border-border last:border-r-0 ${
                       !customSize && width === size && height === size
-                        ? 'bg-accent text-white'
-                        : 'bg-bg-primary border border-border text-text-secondary hover:border-text-secondary'
+                        ? 'bg-accent text-bg-primary'
+                        : 'bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                     }`}
                   >
-                    {size}×{size}
+                    {size}x{size}
                   </button>
                 ))}
                 <button
                   onClick={() => setCustomSize(true)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex-1 py-1 text-lg transition-colors ${
                     customSize
-                      ? 'bg-accent text-white'
-                      : 'bg-bg-primary border border-border text-text-secondary hover:border-text-secondary'
+                      ? 'bg-accent text-bg-primary'
+                      : 'bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                   }`}
                 >
-                  Custom
+                  CUSTOM
                 </button>
               </div>
             </div>
 
             {customSize && (
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold block mb-1">Width</label>
+              <div className="flex gap-0 border-2 border-border">
+                <div className="flex-1 border-r-2 border-border">
+                  <label className="text-base text-text-secondary uppercase block px-3 pt-1 bg-bg-secondary">WIDTH</label>
                   <input
                     type="number"
                     value={width}
                     onChange={(e) => setWidth(Math.max(1, Math.min(512, parseInt(e.target.value) || 1)))}
-                    className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
+                    className="w-full bg-bg-primary px-3 py-1 text-lg text-text-primary focus:outline-none focus:border-accent border-t-2 border-border"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold block mb-1">Height</label>
+                  <label className="text-base text-text-secondary uppercase block px-3 pt-1 bg-bg-secondary">HEIGHT</label>
                   <input
                     type="number"
                     value={height}
                     onChange={(e) => setHeight(Math.max(1, Math.min(512, parseInt(e.target.value) || 1)))}
-                    className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
+                    className="w-full bg-bg-primary px-3 py-1 text-lg text-text-primary focus:outline-none focus:border-accent border-t-2 border-border"
                   />
                 </div>
               </div>
@@ -177,9 +175,9 @@ export default function ProjectSelector() {
 
             <button
               onClick={handleCreate}
-              className="w-full py-2.5 bg-accent hover:bg-accent-hover text-white rounded-lg text-sm font-semibold tracking-wide transition-colors shadow-lg shadow-accent/20"
+              className="w-full py-2 bg-accent hover:bg-accent-hover text-bg-primary text-xl tracking-widest transition-colors border-2 border-accent hover:border-accent-hover"
             >
-              Create Project
+              [ CREATE PROJECT ]
             </button>
           </div>
         )}

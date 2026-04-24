@@ -169,21 +169,26 @@ export default function PixelCanvas() {
         onContextMenu={handleContextMenu}
         className="absolute inset-0"
       />
-      <div className="absolute bottom-2 right-2 flex items-center gap-2">
+      <div className="absolute top-2 left-2 flex items-center gap-0 pointer-events-none">
+        <span className="text-sm text-text-secondary bg-bg-primary/90 px-2 py-1 border-2 border-border">
+          {project?.documents[0]?.width ?? 0}x{project?.documents[0]?.height ?? 0}
+        </span>
+      </div>
+      <div className="absolute bottom-2 right-2 flex items-center gap-0">
         <button
           onClick={() => {
             const s = useEditorStore.getState();
             useEditorStore.setState({ canvas: { ...s.canvas, fitMode: !s.canvas.fitMode } });
             rendererRef.current?.render();
           }}
-          className={`text-xs px-2 py-1 rounded transition-colors ${
-            fitMode ? 'bg-accent text-white' : 'bg-bg-primary/80 text-text-secondary hover:text-text-primary'
+          className={`text-base px-3 py-1 transition-colors border-2 ${
+            fitMode ? 'bg-accent text-bg-primary border-accent' : 'bg-bg-primary/90 text-text-secondary hover:text-text-primary border-border'
           }`}
           title="Fit canvas to view"
         >
-          Fit
+          FIT
         </button>
-        <span className="text-xs text-text-secondary bg-bg-primary/80 px-2 py-1 rounded">
+        <span className="text-base text-text-secondary bg-bg-primary/90 px-3 py-1 border-2 border-l-0 border-border">
           {displayZoom}x
         </span>
       </div>

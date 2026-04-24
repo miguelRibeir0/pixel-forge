@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #1a1a2e;
-  --color-bg-secondary: #16213e;
-  --color-bg-tertiary: #0f3460;
-  --color-surface: #222244;
-  --color-surface-hover: #2a2a50;
-  --color-border: #333366;
-  --color-text-primary: #e0e0e8;
-  --color-text-secondary: #8888aa;
-  --color-accent: #7c3aed;
-  --color-accent-hover: #6d28d9;
-  --color-danger: #ef4444;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-canvas-bg: #2a2a3e;
-  --color-grid-line: rgba(255, 255, 255, 0.06);
+  --color-bg-primary: #080810;
+  --color-bg-secondary: #0f1020;
+  --color-bg-tertiary: #16172e;
+  --color-surface: #1c1e35;
+  --color-surface-hover: #25284a;
+  --color-border: #3d4270;
+  --color-border-light: #565f99;
+  --color-border-dark: #262940;
+  --color-text-primary: #d5d8f0;
+  --color-text-secondary: #5b6090;
+  --color-accent: #00e5ff;
+  --color-accent-hover: #00bcd4;
+  --color-accent-dim: #00e5ff18;
+  --color-danger: #ff2a6d;
+  --color-success: #05ffa1;
+  --color-warning: #ffcc00;
+  --color-canvas-bg: #050508;
+  --color-grid-line: rgba(255, 255, 255, 0.05);
 }
 
 * {
@@ -30,7 +33,15 @@ html, body, #root {
   overflow: hidden;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+/* Subtle pixel-grid background on empty areas */
+.bg-dotted {
+  background-image: radial-gradient(circle, var(--color-border-dark) 1px, transparent 1px);
+  background-size: 8px 8px;
 }
 
 canvas {
@@ -38,20 +49,52 @@ canvas {
   image-rendering: crisp-edges;
 }
 
+/* Blocky scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-dark);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 3px;
+  border: 1px solid var(--color-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  background: var(--color-border-light);
+}
+
+::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+}
+
+input, button {
+  font-family: 'VT323', monospace;
+}
+
+/* Retro 3D button / panel border effect */
+.outset {
+  border: 2px solid var(--color-border-light);
+  border-right-color: var(--color-border-dark);
+  border-bottom-color: var(--color-border-dark);
+  background: var(--color-surface);
+}
+
+.outset:active, .outset.pressed {
+  border: 2px solid var(--color-border-dark);
+  border-right-color: var(--color-border-light);
+  border-bottom-color: var(--color-border-light);
+}
+
+.inset {
+  border: 2px solid var(--color-border-dark);
+  border-right-color: var(--color-border-light);
+  border-bottom-color: var(--color-border-light);
+  background: var(--color-bg-secondary);
 }

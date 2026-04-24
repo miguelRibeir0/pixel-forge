@@ -19,36 +19,41 @@ export default function ColorPalette() {
   };
 
   return (
-    <div className="bg-surface border-b border-border p-2">
-      <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-2 font-semibold">
-        {project.palette.name}
+    <div className="bg-bg-secondary border-b-2 border-border select-none">
+      <div className="px-2 py-1 border-b-2 border-border bg-bg-tertiary">
+        <span className="text-base text-text-secondary uppercase tracking-wider">{project.palette.name}</span>
       </div>
-      <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(colors.length))}, 1fr)` }}>
-        {colors.map((color, index) => (
-          <button
-            key={index}
-            onClick={(e) => handleClick(index, e)}
-            onContextMenu={(e) => e.preventDefault()}
-            className={`w-6 h-6 rounded-sm border transition-all ${
-              index === activeColorIndex
-                ? 'border-white ring-1 ring-accent scale-110 z-10'
-                : index === secondaryColorIndex
-                ? 'border-white/50 ring-1 ring-white/30'
-                : 'border-border/50 hover:scale-105'
-            }`}
-            style={{ backgroundColor: color }}
-            title={color}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-2 mt-2">
-        <div className="flex items-center gap-1">
-          <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: colors[activeColorIndex] }} />
-          <span className="text-[10px] text-text-secondary">FG</span>
+      <div className="p-2">
+        <div
+          className="grid gap-px border-2 border-border p-px bg-border"
+          style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(colors.length))}, 1fr)` }}
+        >
+          {colors.map((color, index) => (
+            <button
+              key={index}
+              onClick={(e) => handleClick(index, e)}
+              onContextMenu={(e) => e.preventDefault()}
+              className={`w-7 h-7 transition-all ${
+                index === activeColorIndex
+                  ? 'outline outline-2 outline-white outline-offset-0 z-10'
+                  : index === secondaryColorIndex
+                  ? 'outline outline-2 outline-text-secondary outline-offset-0'
+                  : ''
+              }`}
+              style={{ backgroundColor: color }}
+              title={color}
+            />
+          ))}
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: colors[secondaryColorIndex] }} />
-          <span className="text-[10px] text-text-secondary">BG</span>
+        <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 border-2 border-border" style={{ backgroundColor: colors[activeColorIndex] }} />
+            <span className="text-base text-text-secondary">FG</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 border-2 border-text-secondary" style={{ backgroundColor: colors[secondaryColorIndex] }} />
+            <span className="text-base text-text-secondary">BG</span>
+          </div>
         </div>
       </div>
     </div>

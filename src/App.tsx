@@ -19,24 +19,48 @@ function EditorHeader() {
   const displayZoom = fitMode ? zoom.toFixed(1) : zoom;
 
   return (
-    <div className="flex items-center justify-between px-3 py-1.5 bg-surface border-b border-border">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-accent tracking-wider">PIXEL FORGE</span>
-        <span className="text-xs text-text-secondary">—</span>
+    <div className="flex items-center justify-between px-3 py-1 bg-bg-secondary border-b-2 border-border select-none">
+      <div className="flex items-center gap-3">
+        <span className="text-xl text-accent tracking-widest">[ PIXEL FORGE ]</span>
+        <span className="text-lg text-border">|</span>
         <button
           onClick={clearProject}
-          className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+          className="text-lg text-text-secondary hover:text-text-primary transition-colors"
           title="Switch project"
         >
           {projectName}
         </button>
         {docWidth && docHeight && (
-          <span className="text-[10px] text-text-secondary/50">
-            ({docWidth}×{docHeight})
+          <span className="text-base text-text-secondary">
+            ({docWidth}x{docHeight})
           </span>
         )}
       </div>
-      <span className="text-[10px] text-text-secondary/50">Zoom: {displayZoom}x</span>
+      <div className="flex items-center gap-3">
+        <span className="text-base text-text-secondary">ZOOM {displayZoom}x</span>
+      </div>
+    </div>
+  );
+}
+
+function StatusBar() {
+  const activeTool = useEditorStore(s => s.activeTool);
+  const brushSize = useEditorStore(s => s.brushSize);
+  const activeColorIndex = useEditorStore(s => s.activeColorIndex);
+  const project = useEditorStore(s => s.project);
+  const color = project?.palette.colors[activeColorIndex] ?? '#fff';
+
+  return (
+    <div className="flex items-center justify-between px-3 py-0.5 bg-bg-secondary border-t-2 border-border select-none">
+      <div className="flex items-center gap-4">
+        <span className="text-base text-text-secondary">TOOL: <span className="text-accent">{activeTool.toUpperCase()}</span></span>
+        <span className="text-base text-text-secondary">BRUSH: <span className="text-accent">{brushSize}</span></span>
+        <span className="flex items-center gap-1 text-base text-text-secondary">
+          COLOR:
+          <span className="inline-block w-3 h-3 border border-border" style={{ backgroundColor: color }} />
+        </span>
+      </div>
+      <span className="text-base text-text-secondary">v0.1.0</span>
     </div>
   );
 }
@@ -49,12 +73,13 @@ function EditorScreen() {
       <div className="flex flex-1 overflow-hidden">
         <Toolbar />
         <PixelCanvas />
-        <div className="w-48 flex flex-col">
+        <div className="w-52 flex flex-col border-l-2 border-border bg-bg-secondary">
           <ColorPalette />
           <LayerPanel />
         </div>
       </div>
       <Timeline />
+      <StatusBar />
     </div>
   );
 }
@@ -101,8 +126,8 @@ export default function App() {
   }, [project]);
 
   if (loading) return (
-    <div className="w-full h-full flex items-center justify-center bg-bg-primary">
-      <div className="text-text-secondary text-sm">Loading...</div>
+    <div className="w-full h-full flex items-center justify-center bg-bg-primary bg-dotted">
+      <div className="text-accent text-2xl animate-pulse">LOADING...</div>
     </div>
   );
 
