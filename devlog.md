@@ -126,3 +126,37 @@
 - Async IndexedDB save didn't complete before page unload — switched to immediate saves + pagehide handler
 - Cursor overlay invisible at low zoom — added minimum visual size
 - Browser cursor hidden everywhere — now only hidden over document area
+
+## Day 4 — Undo Bug Fix & PNG Export
+
+**Goals:** Fix the `oldIndex` bug breaking undo, implement PNG export.
+
+### Milestones
+- [x] Fixed critical `oldIndex` bug — undo was restoring all pixels to transparent (index 0) instead of their actual previous color
+- [x] Added `getPixelValue()` helper to read actual pixel values from the active layer
+- [x] Added `finalizeDiffs()` helper to deduplicate diffs and preserve original colors for undo
+- [x] Rewrote `PencilTool`, `EraserTool`, `DitherTool` to use per-pixel old value caching
+- [x] Fixed `LineTool`, `RectangleTool`, `EllipseTool` to read actual oldIndex via `getPixelValue()`
+- [x] Fixed `MoveTool` preview diffs to capture correct old values at destination pixels
+- [x] Implemented PNG export — composites all visible layers with proper alpha blending
+- [x] Fixed export quality issues with nearest-neighbor upscaling (8x for <=32px, 4x for <=64px, 2x for <=128px)
+- [x] Added "EXPORT PNG" button in editor header
+- [x] Build compiles clean — TypeScript and Vite production build succeed
+
+### Architecture changes
+- **Tools:** `src/editor/tools/index.ts` — `getPixelValue()`, `finalizeDiffs()` helpers; all tools now capture correct `oldIndex`
+- **Export:** New `src/export/png.ts` — `exportFrameAsPng()` with nearest-neighbor upscaling
+- **UI:** Updated `src/App.tsx` — `EditorHeader` now includes EXPORT PNG button
+
+### Bug fixes
+- `oldIndex` was hardcoded to `0` across all tools, making undo always restore to transparent regardless of what was actually there before
+- `commitDiffs()` now reads actual old pixel values before pushing the command
+- Export was blurry because small canvases (32x32, 64x64) opened in image viewers with bilinear interpolation — fixed by upscaling the PNG
+
+### Next steps
+- [ ] Animation playback preview
+- [ ] Onion skinning
+- [ ] AI integration (Phase 3)
+- [ ] Layer reordering UI (drag-and-drop)
+- [ ] Layer renaming UI
+- [ ] Symmetry tools (H/V/radial)

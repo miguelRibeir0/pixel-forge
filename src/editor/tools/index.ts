@@ -25,6 +25,28 @@ function getActiveLayerPixels(): { pixels: Uint8Array; width: number; height: nu
   return { pixels: layer.pixels, width: doc.width, height: doc.height };
 }
 
+function getPixelValue(x: number, y: number): number {
+  const state = useEditorStore.getState();
+  const doc = state.project?.documents.find(d => d.id === state.activeDocumentId);
+  if (!doc) return 0;
+  const frame = doc.frames.find(f => f.id === state.activeFrameId);
+  if (!frame) return 0;
+  const layer = frame.layers.find(l => l.id === state.activeLayerId);
+  if (!layer) return 0;
+  if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) return 0;
+  return layer.pixels[y * doc.width + x];
+}
+
+function finalizeDiffs(diffs: PixelDiff[], oldValueCache: Map<string, number>): PixelDiff[] {
+  const result = new Map<string, PixelDiff>();
+  for (const diff of diffs) {
+    const key = `${diff.x},${diff.y}`;
+    const cachedOld = oldValueCache.get(key) ?? diff.oldIndex;
+    result.set(key, { ...diff, oldIndex: cachedOld });
+  }
+  return Array.from(result.values());
+}
+
 function getBrushPixels(x: number, y: number, size: number, docWidth: number, docHeight: number): { x: number; y: number }[] {
   const pixels: { x: number; y: number }[] = [];
   const half = Math.floor(size / 2);
@@ -154,11 +176,15 @@ function applyDiffsAsPreview(diffs: PixelDiff[]) {
 function commitDiffs(diffs: PixelDiff[], description: string) {
   const state = useEditorStore.getState();
   if (diffs.length === 0) return;
-  state.setPixels(diffs);
+  const info = getActiveLayerPixels();
+  const fixedDiffs = info
+    ? diffs.map(d => ({ ...d, oldIndex: info.pixels[d.y * info.width + d.x] }))
+    : diffs;
+  state.setPixels(fixedDiffs);
   state.pushCommand({
     id: nanoid(),
     description,
-    diffs,
+    diffs: fixedDiffs,
     layerId: state.activeLayerId!,
     frameId: state.activeFrameId!,
   });
@@ -167,13 +193,23 @@ function commitDiffs(diffs: PixelDiff[], description: string) {
 export class PencilTool implements ToolHandler {
   drawing = false;
   allDiffs: PixelDiff[] = [];
+  oldValueCache = new Map<string, number>();
+  colorIndex = 0;
+
+  private getOldValue(x: number, y: number): number {
+    const key = `${x},${y}`;
+    if (!this.oldValueCache.has(key)) {
+      this.oldValueCache.set(key, getPixelValue(x, y));
+    }
+    return this.oldValueCache.get(key)!;
+  }
 
   onMouseDown(x: number, y: number, button: number) {
     const state = useEditorStore.getState();
-    const colorIndex = button === 2 ? state.secondaryColorIndex : state.activeColorIndex;
+    this.colorIndex = button === 2 ? state.secondaryColorIndex : state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const pixels = getBrushPixels(x, y, state.brushSize, width, height);
-    const diffs: PixelDiff[] = pixels.map(p => ({ x: p.x, y: p.y, oldIndex: 0, newIndex: colorIndex }));
+    const diffs: PixelDiff[] = pixels.map(p => ({ x: p.x, y: p.y, oldIndex: this.getOldValue(p.x, p.y), newIndex: this.colorIndex }));
     this.allDiffs = diffs;
     state.setPixels(diffs);
     state.setDrawing(true);
@@ -186,14 +222,13 @@ export class PencilTool implements ToolHandler {
     const state = useEditorStore.getState();
     const lastPixel = state.lastPixel;
     if (!lastPixel) return;
-    const colorIndex = state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const points = bresenhamLine(lastPixel.x, lastPixel.y, x, y);
     const newDiffs: PixelDiff[] = [];
     for (const p of points) {
       const pixels = getBrushPixels(p.x, p.y, state.brushSize, width, height);
       for (const px of pixels) {
-        newDiffs.push({ x: px.x, y: px.y, oldIndex: 0, newIndex: colorIndex });
+        newDiffs.push({ x: px.x, y: px.y, oldIndex: this.getOldValue(px.x, px.y), newIndex: this.colorIndex });
       }
     }
     this.allDiffs.push(...newDiffs);
@@ -203,10 +238,19 @@ export class PencilTool implements ToolHandler {
 
   onMouseUp() {
     if (this.drawing && this.allDiffs.length > 0) {
-      commitDiffs(this.allDiffs, 'Pencil stroke');
+      const state = useEditorStore.getState();
+      const diffs = finalizeDiffs(this.allDiffs, this.oldValueCache);
+      state.pushCommand({
+        id: nanoid(),
+        description: 'Pencil stroke',
+        diffs,
+        layerId: state.activeLayerId!,
+        frameId: state.activeFrameId!,
+      });
     }
     this.drawing = false;
     this.allDiffs = [];
+    this.oldValueCache.clear();
     useEditorStore.getState().setDrawing(false);
     useEditorStore.getState().setLastPixel(null);
   }
@@ -215,12 +259,21 @@ export class PencilTool implements ToolHandler {
 export class EraserTool implements ToolHandler {
   drawing = false;
   allDiffs: PixelDiff[] = [];
+  oldValueCache = new Map<string, number>();
+
+  private getOldValue(x: number, y: number): number {
+    const key = `${x},${y}`;
+    if (!this.oldValueCache.has(key)) {
+      this.oldValueCache.set(key, getPixelValue(x, y));
+    }
+    return this.oldValueCache.get(key)!;
+  }
 
   onMouseDown(x: number, y: number) {
     const state = useEditorStore.getState();
     const { width, height } = getDocDimensions();
     const pixels = getBrushPixels(x, y, state.brushSize, width, height);
-    const diffs: PixelDiff[] = pixels.map(p => ({ x: p.x, y: p.y, oldIndex: 0, newIndex: 0 }));
+    const diffs: PixelDiff[] = pixels.map(p => ({ x: p.x, y: p.y, oldIndex: this.getOldValue(p.x, p.y), newIndex: 0 }));
     this.allDiffs = diffs;
     state.setPixels(diffs);
     state.setDrawing(true);
@@ -239,7 +292,7 @@ export class EraserTool implements ToolHandler {
     for (const p of points) {
       const pixels = getBrushPixels(p.x, p.y, state.brushSize, width, height);
       for (const px of pixels) {
-        newDiffs.push({ x: px.x, y: px.y, oldIndex: 0, newIndex: 0 });
+        newDiffs.push({ x: px.x, y: px.y, oldIndex: this.getOldValue(px.x, px.y), newIndex: 0 });
       }
     }
     this.allDiffs.push(...newDiffs);
@@ -249,10 +302,19 @@ export class EraserTool implements ToolHandler {
 
   onMouseUp() {
     if (this.drawing && this.allDiffs.length > 0) {
-      commitDiffs(this.allDiffs, 'Erase');
+      const state = useEditorStore.getState();
+      const diffs = finalizeDiffs(this.allDiffs, this.oldValueCache);
+      state.pushCommand({
+        id: nanoid(),
+        description: 'Erase',
+        diffs,
+        layerId: state.activeLayerId!,
+        frameId: state.activeFrameId!,
+      });
     }
     this.drawing = false;
     this.allDiffs = [];
+    this.oldValueCache.clear();
     useEditorStore.getState().setDrawing(false);
     useEditorStore.getState().setLastPixel(null);
   }
@@ -327,7 +389,7 @@ export class LineTool implements ToolHandler {
     for (const p of points) {
       const brushPixels = getBrushPixels(p.x, p.y, state.brushSize, width, height);
       for (const bp of brushPixels) {
-        diffs.push({ x: bp.x, y: bp.y, oldIndex: 0, newIndex: colorIndex });
+        diffs.push({ x: bp.x, y: bp.y, oldIndex: getPixelValue(bp.x, bp.y), newIndex: colorIndex });
       }
     }
     applyDiffsAsPreview(diffs);
@@ -365,7 +427,7 @@ export class RectangleTool implements ToolHandler {
     const colorIndex = state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const points = getRectPixels(this.startX, this.startY, x, y, false, width, height);
-    const diffs: PixelDiff[] = points.map(p => ({ x: p.x, y: p.y, oldIndex: 0, newIndex: colorIndex }));
+    const diffs: PixelDiff[] = points.map(p => ({ x: p.x, y: p.y, oldIndex: getPixelValue(p.x, p.y), newIndex: colorIndex }));
     applyDiffsAsPreview(diffs);
   }
 
@@ -400,7 +462,7 @@ export class EllipseTool implements ToolHandler {
     const colorIndex = state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const points = getEllipsePixels(this.startX, this.startY, x, y, false, width, height);
-    const diffs: PixelDiff[] = points.map(p => ({ x: p.x, y: p.y, oldIndex: 0, newIndex: colorIndex }));
+    const diffs: PixelDiff[] = points.map(p => ({ x: p.x, y: p.y, oldIndex: getPixelValue(p.x, p.y), newIndex: colorIndex }));
     applyDiffsAsPreview(diffs);
   }
 
@@ -490,7 +552,7 @@ export class MoveTool implements ToolHandler {
         const nx = sx + dx;
         const ny = sy + dy;
         if (nx >= 0 && nx < this.snapshotW && ny >= 0 && ny < this.snapshotH) {
-          diffs.push({ x: nx, y: ny, oldIndex: 0, newIndex: colorIdx });
+          diffs.push({ x: nx, y: ny, oldIndex: getPixelValue(nx, ny), newIndex: colorIdx });
         }
       }
     }
@@ -547,19 +609,29 @@ export class MoveTool implements ToolHandler {
 export class DitherTool implements ToolHandler {
   drawing = false;
   allDiffs: PixelDiff[] = [];
+  oldValueCache = new Map<string, number>();
+  colorIndex = 0;
 
   private isDitherPixel(x: number, y: number): boolean {
     return (x + y) % 2 === 0;
   }
 
+  private getOldValue(x: number, y: number): number {
+    const key = `${x},${y}`;
+    if (!this.oldValueCache.has(key)) {
+      this.oldValueCache.set(key, getPixelValue(x, y));
+    }
+    return this.oldValueCache.get(key)!;
+  }
+
   onMouseDown(x: number, y: number, button: number) {
     const state = useEditorStore.getState();
-    const colorIndex = button === 2 ? state.secondaryColorIndex : state.activeColorIndex;
+    this.colorIndex = button === 2 ? state.secondaryColorIndex : state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const pixels = getBrushPixels(x, y, state.brushSize, width, height);
     const diffs: PixelDiff[] = pixels
       .filter(p => this.isDitherPixel(p.x, p.y))
-      .map(p => ({ x: p.x, y: p.y, oldIndex: 0, newIndex: colorIndex }));
+      .map(p => ({ x: p.x, y: p.y, oldIndex: this.getOldValue(p.x, p.y), newIndex: this.colorIndex }));
     this.allDiffs = diffs;
     state.setPixels(diffs);
     state.setDrawing(true);
@@ -572,7 +644,6 @@ export class DitherTool implements ToolHandler {
     const state = useEditorStore.getState();
     const lastPixel = state.lastPixel;
     if (!lastPixel) return;
-    const colorIndex = state.activeColorIndex;
     const { width, height } = getDocDimensions();
     const points = bresenhamLine(lastPixel.x, lastPixel.y, x, y);
     const newDiffs: PixelDiff[] = [];
@@ -580,7 +651,7 @@ export class DitherTool implements ToolHandler {
       const pixels = getBrushPixels(p.x, p.y, state.brushSize, width, height);
       for (const px of pixels) {
         if (this.isDitherPixel(px.x, px.y)) {
-          newDiffs.push({ x: px.x, y: px.y, oldIndex: 0, newIndex: colorIndex });
+          newDiffs.push({ x: px.x, y: px.y, oldIndex: this.getOldValue(px.x, px.y), newIndex: this.colorIndex });
         }
       }
     }
@@ -591,10 +662,19 @@ export class DitherTool implements ToolHandler {
 
   onMouseUp() {
     if (this.drawing && this.allDiffs.length > 0) {
-      commitDiffs(this.allDiffs, 'Dither');
+      const state = useEditorStore.getState();
+      const diffs = finalizeDiffs(this.allDiffs, this.oldValueCache);
+      state.pushCommand({
+        id: nanoid(),
+        description: 'Dither',
+        diffs,
+        layerId: state.activeLayerId!,
+        frameId: state.activeFrameId!,
+      });
     }
     this.drawing = false;
     this.allDiffs = [];
+    this.oldValueCache.clear();
     useEditorStore.getState().setDrawing(false);
     useEditorStore.getState().setLastPixel(null);
   }

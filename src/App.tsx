@@ -8,6 +8,7 @@ import Timeline from './ui/timeline/Timeline';
 import ProjectSelector from './ui/ProjectSelector';
 import { useKeyboardShortcuts } from './editor/shortcuts';
 import { loadLastProject, saveProject, saveProjectSync } from './storage/indexeddb';
+import { exportFrameAsPng } from './export/png';
 
 function EditorHeader() {
   const projectName = useEditorStore(s => s.project?.name);
@@ -17,6 +18,17 @@ function EditorHeader() {
   const fitMode = useEditorStore(s => s.canvas.fitMode);
   const clearProject = useEditorStore(s => s.clearProject);
   const displayZoom = fitMode ? zoom.toFixed(1) : zoom;
+  const project = useEditorStore(s => s.project);
+  const activeDocumentId = useEditorStore(s => s.activeDocumentId);
+  const activeFrameId = useEditorStore(s => s.activeFrameId);
+
+  const handleExportPng = () => {
+    if (!project || !activeDocumentId || !activeFrameId) return;
+    const doc = project.documents.find(d => d.id === activeDocumentId);
+    const frame = doc?.frames.find(f => f.id === activeFrameId);
+    if (!doc || !frame) return;
+    exportFrameAsPng(project, doc, frame);
+  };
 
   return (
     <div className="flex items-center justify-between px-4 py-1.5 bg-bg-secondary border-b border-border select-none">
@@ -37,6 +49,13 @@ function EditorHeader() {
         )}
       </div>
       <div className="flex items-center gap-4">
+        <button
+          onClick={handleExportPng}
+          className="text-xs text-text-muted hover:text-text-primary bg-surface hover:bg-border px-2 py-1 rounded border border-border-subtle transition-colors duration-150"
+          title="Export current frame as PNG"
+        >
+          EXPORT PNG
+        </button>
         <span className="text-sm text-text-muted">
           <span className="text-text-secondary">{displayZoom}</span>x
         </span>
