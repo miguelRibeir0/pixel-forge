@@ -1,5 +1,9 @@
 import useEditorStore from '../../store/editorStore';
 
+function getCSSVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#000000';
+}
+
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -29,7 +33,8 @@ export class CanvasRenderer {
     const frame = doc.frames.find(f => f.id === renderFrameId);
     if (!frame) return;
 
-    let { showGrid, gridOpacity, fitMode, zoom, panX, panY } = state.canvas;
+    const { showGrid, fitMode } = state.canvas;
+    let { zoom, panX, panY } = state.canvas;
     const { width: docW, height: docH } = doc;
 
     const canvasWidth = this.canvas.width;
@@ -87,8 +92,13 @@ export class CanvasRenderer {
     const destH = docH * zoom;
     this.ctx.drawImage(this.offscreenCanvas, destX, destY, destW, destH);
 
+    // Document border — clearly frames the painting area
+    this.ctx.strokeStyle = getCSSVar('--color-border');
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(destX - 0.5, destY - 0.5, destW + 1, destH + 1);
+
     if (showGrid) {
-      this.drawGrid(destX, destY, docW, docH, zoom, gridOpacity);
+      this.drawGrid(destX, destY, docW, docH, zoom);
     }
 
     const preview = state.previewPixels;
@@ -106,7 +116,7 @@ export class CanvasRenderer {
 
     const sel = state.selection;
     if (sel) {
-      this.ctx.strokeStyle = '#7c3aed';
+      this.ctx.strokeStyle = getCSSVar('--color-accent');
       this.ctx.lineWidth = 2;
       this.ctx.setLineDash([4, 4]);
       this.ctx.strokeRect(
@@ -134,7 +144,7 @@ export class CanvasRenderer {
 
       if (tool === 'eraser') {
         this.ctx.globalAlpha = 0.4;
-        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.strokeStyle = getCSSVar('--color-danger');
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([4, 4]);
         this.ctx.strokeRect(rx, ry, Math.max(rw, minSize), Math.max(rh, minSize));
@@ -146,7 +156,7 @@ export class CanvasRenderer {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(rx, ry, Math.max(rw, minSize), Math.max(rh, minSize));
         this.ctx.globalAlpha = 0.8;
-        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.strokeStyle = getCSSVar('--color-danger');
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(rx + 0.5, ry + 0.5, Math.max(rw, minSize) - 1, Math.max(rh, minSize) - 1);
         this.ctx.globalAlpha = 1;
@@ -154,7 +164,7 @@ export class CanvasRenderer {
         const size = Math.max(zoom, 6);
         const cx = destX + cursor.x * zoom + zoom / 2;
         const cy = destY + cursor.y * zoom + zoom / 2;
-        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.strokeStyle = getCSSVar('--color-danger');
         this.ctx.lineWidth = 1;
         this.ctx.beginPath();
         this.ctx.moveTo(cx - size / 2, cy);
@@ -171,7 +181,6 @@ export class CanvasRenderer {
     docW: number, docH: number,
     zoom: number, panX: number, panY: number
   ) {
-    const checkSize = Math.max(1, Math.floor(zoom / 2));
     const startX = panX;
     const startY = panY;
     const endX = panX + docW * zoom;
@@ -182,25 +191,14 @@ export class CanvasRenderer {
     const clampedEndX = Math.min(cw, endX);
     const clampedEndY = Math.min(ch, endY);
 
-    this.ctx.fillStyle = '#1a1a2e';
+    const docFill = getCSSVar('--color-canvas-doc');
+    this.ctx.fillStyle = docFill;
     this.ctx.fillRect(clampedStartX, clampedStartY, clampedEndX - clampedStartX, clampedEndY - clampedStartY);
-
-    this.ctx.fillStyle = '#222244';
-    for (let y = clampedStartY; y < clampedEndY; y += checkSize * 2) {
-      for (let x = clampedStartX; x < clampedEndX; x += checkSize * 2) {
-        const localX = x - panX;
-        const localY = y - panY;
-        const checkX = Math.floor(localX / checkSize);
-        const checkY = Math.floor(localY / checkSize);
-        if ((checkX + checkY) % 2 === 1) {
-          this.ctx.fillRect(x, y, checkSize, checkSize);
-        }
-      }
-    }
   }
 
-  private drawGrid(ox: number, oy: number, docW: number, docH: number, zoom: number, opacity: number) {
-    this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+  private drawGrid(ox: number, oy: number, docW: number, docH: number, zoom: number) {
+    const gridLine = getCSSVar('--color-grid-line');
+    this.ctx.strokeStyle = gridLine;
     this.ctx.lineWidth = 1;
 
     for (let x = 0; x <= docW; x++) {

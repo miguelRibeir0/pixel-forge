@@ -59,6 +59,14 @@ export default function PixelCanvas() {
   }, [project, zoom, isDrawing, fitMode, previewPixels, cursorPixel, playbackFrameId]);
 
   useEffect(() => {
+    const observer = new MutationObserver(() => {
+      rendererRef.current?.render();
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -158,10 +166,27 @@ export default function PixelCanvas() {
         3200,
         Math.max(1, Math.round(currentZoom) + delta * step),
       );
+
+      // Zoom towards mouse cursor
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+
+        const ratio = newZoom / currentZoom;
+        const newPanX = mx - (mx - state.canvas.panX) * ratio;
+        const newPanY = my - (my - state.canvas.panY) * ratio;
+
+        setPan(newPanX, newPanY);
+      }
+
       setZoom(newZoom);
       rendererRef.current?.render();
     },
-    [setZoom],
+    [setZoom, setPan],
   );
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -173,7 +198,7 @@ export default function PixelCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-hidden relative bg-canvas-bg"
+      className="flex-1 overflow-hidden relative bg-canvas-bg border-x border-border"
     >
       <canvas
         ref={canvasRef}

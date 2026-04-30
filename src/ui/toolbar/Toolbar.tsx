@@ -43,6 +43,7 @@ export default function Toolbar() {
           return (
             <button
               key={tool.id}
+              tabIndex={-1}
               onClick={() => setActiveTool(tool.id)}
               className={`w-8 h-8 flex items-center justify-center rounded transition-all duration-150 ${
                 isActive
@@ -61,6 +62,7 @@ export default function Toolbar() {
 
       <div className="flex flex-col items-center gap-0.5 mx-1.5">
         <button
+          tabIndex={-1}
           onClick={() => setBrushSize(Math.max(1, brushSize - 1))}
           className="w-full h-6 text-sm text-text-muted hover:text-text-primary hover:bg-surface flex items-center justify-center rounded transition-colors"
           title="Decrease brush"
@@ -69,6 +71,7 @@ export default function Toolbar() {
         </button>
         <span className="text-sm text-text-primary font-bold">{brushSize}</span>
         <button
+          tabIndex={-1}
           onClick={() => setBrushSize(Math.min(32, brushSize + 1))}
           className="w-full h-6 text-sm text-text-muted hover:text-text-primary hover:bg-surface flex items-center justify-center rounded transition-colors"
           title="Increase brush"
@@ -80,6 +83,7 @@ export default function Toolbar() {
       <div className="mx-2 h-px bg-border-subtle my-1" />
 
       <button
+        tabIndex={-1}
         onClick={toggleGrid}
         className={`mx-1.5 h-7 flex items-center justify-center text-xs rounded transition-all duration-150 ${
           showGrid

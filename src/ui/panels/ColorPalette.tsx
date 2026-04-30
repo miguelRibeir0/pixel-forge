@@ -34,8 +34,8 @@ export default function ColorPalette() {
               onClick={(e) => handleClick(index, e)}
               onContextMenu={(e) => e.preventDefault()}
               className={`aspect-square transition-all duration-100 ${
-                index === activeColorIndex
-                  ? 'ring-2 ring-white ring-inset scale-110 z-10 relative'
+                  index === activeColorIndex
+                  ? 'ring-2 ring-bg-primary ring-inset scale-110 z-10 relative'
                   : index === secondaryColorIndex
                   ? 'ring-2 ring-text-secondary ring-inset'
                   : 'hover:scale-105'

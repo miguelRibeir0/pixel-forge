@@ -6,6 +6,7 @@ import ColorPalette from './ui/panels/ColorPalette';
 import LayerPanel from './ui/panels/LayerPanel';
 import Timeline from './ui/timeline/Timeline';
 import ProjectSelector from './ui/ProjectSelector';
+import ThemeToggle from './ui/ThemeToggle';
 import { useKeyboardShortcuts } from './editor/shortcuts';
 import { loadLastProject, saveProject, saveProjectSync } from './storage/indexeddb';
 import { exportFrameAsPng } from './export/png';
@@ -134,7 +135,10 @@ function StatusBar() {
           </>
         )}
       </div>
-      <span className="text-text-muted">v0.1.0</span>
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <span className="text-text-muted">v0.1.0</span>
+      </div>
     </div>
   );
 }

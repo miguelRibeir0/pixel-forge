@@ -24,9 +24,45 @@
   --color-success-dim: rgba(5, 255, 161, 0.12);
   --color-warning: #ffcc00;
   --color-warning-dim: rgba(255, 204, 0, 0.12);
-  --color-canvas-bg: #060610;
-  --color-grid-line: rgba(255, 255, 255, 0.04);
+  --color-canvas-bg: #0a0a1a;
+  --color-canvas-doc: #151530;
+  --color-grid-line: rgba(255, 255, 255, 0.08);
   --color-shadow: rgba(0, 0, 0, 0.4);
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --color-bg-primary: #f5f5fa;
+  --color-bg-secondary: #eaeaf0;
+  --color-bg-tertiary: #e0e0e8;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f5f5fa;
+  --color-surface-active: #eaeaf0;
+  --color-border: #d0d0d8;
+  --color-border-light: #e0e0e8;
+  --color-border-dark: #c0c0c8;
+  --color-border-subtle: #e8e8ed;
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #5a5a7a;
+  --color-text-muted: #8a8aa0;
+  --color-accent: #0088aa;
+  --color-accent-hover: #006688;
+  --color-accent-dim: rgba(0, 136, 170, 0.08);
+  --color-accent-glow: rgba(0, 136, 170, 0.15);
+  --color-danger: #e11d48;
+  --color-danger-dim: rgba(225, 29, 72, 0.12);
+  --color-success: #059669;
+  --color-success-dim: rgba(5, 150, 105, 0.12);
+  --color-warning: #d97706;
+  --color-warning-dim: rgba(217, 119, 6, 0.12);
+  --color-canvas-bg: #c8c8d4;
+  --color-canvas-doc: #f8f8fb;
+  --color-grid-line: rgba(0, 0, 0, 0.12);
+  --color-shadow: rgba(0, 0, 0, 0.1);
 }
 
 * {

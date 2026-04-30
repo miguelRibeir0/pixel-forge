@@ -48,7 +48,7 @@ export default function Timeline() {
           <button
             onClick={handleTogglePlay}
             className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs rounded transition-colors duration-150"
-            style={isPlaying ? { background: '#7c3aed', color: '#0a0a1a' } : { color: 'var(--color-text-muted)' }}
+            style={isPlaying ? { background: 'var(--color-accent)', color: 'var(--color-bg-primary)' } : { color: 'var(--color-text-muted)' }}
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? <Pause size={10} /> : <Play size={10} />}
