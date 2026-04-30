@@ -19,6 +19,7 @@ export default function PixelCanvas() {
   const isDrawing = useEditorStore((s) => s.isDrawing);
   const previewPixels = useEditorStore((s) => s.previewPixels);
   const cursorPixel = useEditorStore((s) => s.cursorPixel);
+  const playbackFrameId = useEditorStore((s) => s.playbackFrameId);
   const panRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
@@ -55,7 +56,7 @@ export default function PixelCanvas() {
   useEffect(() => {
     if (!rendererRef.current) return;
     rendererRef.current.render();
-  }, [project, zoom, isDrawing, fitMode, previewPixels, cursorPixel]);
+  }, [project, zoom, isDrawing, fitMode, previewPixels, cursorPixel, playbackFrameId]);
 
   useEffect(() => {
     const container = containerRef.current;

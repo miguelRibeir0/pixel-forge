@@ -19,12 +19,14 @@ export class CanvasRenderer {
 
   render() {
     const state = useEditorStore.getState();
-    const { project, activeDocumentId, activeFrameId } = state;
+    const { project, activeDocumentId, activeFrameId, isPlaying, playbackFrameId } = state;
     if (!project || !activeDocumentId || !activeFrameId) return;
 
     const doc = project.documents.find(d => d.id === activeDocumentId);
     if (!doc) return;
-    const frame = doc.frames.find(f => f.id === activeFrameId);
+
+    const renderFrameId = (isPlaying && playbackFrameId) ? playbackFrameId : activeFrameId;
+    const frame = doc.frames.find(f => f.id === renderFrameId);
     if (!frame) return;
 
     let { showGrid, gridOpacity, fitMode, zoom, panX, panY } = state.canvas;

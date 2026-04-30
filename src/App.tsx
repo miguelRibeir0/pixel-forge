@@ -9,6 +9,7 @@ import ProjectSelector from './ui/ProjectSelector';
 import { useKeyboardShortcuts } from './editor/shortcuts';
 import { loadLastProject, saveProject, saveProjectSync } from './storage/indexeddb';
 import { exportFrameAsPng } from './export/png';
+import { useAnimationPlayer } from './animation/playback';
 
 function EditorHeader() {
   const projectName = useEditorStore(s => s.project?.name);
@@ -17,10 +18,12 @@ function EditorHeader() {
   const zoom = useEditorStore(s => s.canvas.zoom);
   const fitMode = useEditorStore(s => s.canvas.fitMode);
   const clearProject = useEditorStore(s => s.clearProject);
+  const clearActiveLayer = useEditorStore(s => s.clearActiveLayer);
   const displayZoom = fitMode ? zoom.toFixed(1) : zoom;
   const project = useEditorStore(s => s.project);
   const activeDocumentId = useEditorStore(s => s.activeDocumentId);
   const activeFrameId = useEditorStore(s => s.activeFrameId);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleExportPng = () => {
     if (!project || !activeDocumentId || !activeFrameId) return;
@@ -28,6 +31,11 @@ function EditorHeader() {
     const frame = doc?.frames.find(f => f.id === activeFrameId);
     if (!doc || !frame) return;
     exportFrameAsPng(project, doc, frame);
+  };
+
+  const handleClear = () => {
+    clearActiveLayer();
+    setShowClearConfirm(false);
   };
 
   return (
@@ -50,6 +58,13 @@ function EditorHeader() {
       </div>
       <div className="flex items-center gap-4">
         <button
+          onClick={() => setShowClearConfirm(true)}
+          className="text-xs text-danger/70 hover:text-danger bg-surface hover:bg-border px-2 py-1 rounded border border-border-subtle transition-colors duration-150"
+          title="Clear current layer"
+        >
+          CLEAR
+        </button>
+        <button
           onClick={handleExportPng}
           className="text-xs text-text-muted hover:text-text-primary bg-surface hover:bg-border px-2 py-1 rounded border border-border-subtle transition-colors duration-150"
           title="Export current frame as PNG"
@@ -60,6 +75,29 @@ function EditorHeader() {
           <span className="text-text-secondary">{displayZoom}</span>x
         </span>
       </div>
+
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowClearConfirm(false)}>
+          <div className="bg-bg-secondary border border-border rounded-lg p-8 shadow-xl max-w-xs w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-sm text-text-primary mb-2 font-bold">Clear Layer</p>
+            <p className="text-xs text-text-muted mb-6">This will erase all pixels on the current layer. This action can be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="text-xs text-text-muted hover:text-text-primary px-3 py-1.5 rounded border border-border-subtle transition-colors duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClear}
+                className="text-xs text-white bg-danger/80 hover:bg-danger px-3 py-1.5 rounded transition-colors duration-150"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -103,6 +141,7 @@ function StatusBar() {
 
 function EditorScreen() {
   useKeyboardShortcuts();
+  useAnimationPlayer();
   return (
     <div className="w-full h-full flex flex-col">
       <EditorHeader />

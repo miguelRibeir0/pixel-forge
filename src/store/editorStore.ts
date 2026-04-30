@@ -20,6 +20,10 @@ interface EditorState {
   cursorPixel: { x: number; y: number } | null;
   selection: SelectionState;
   previewPixels: PixelDiff[] | null;
+  isPlaying: boolean;
+  playbackFrameId: string | null;
+  playbackLoop: boolean;
+  playbackSpeed: number;
 
   setProject: (project: Project) => void;
   clearProject: () => void;
@@ -54,8 +58,15 @@ interface EditorState {
   setFrameDuration: (frameId: string, duration: number) => void;
   setActiveFrameByIndex: (index: number) => void;
 
+  clearActiveLayer: () => void;
   setPixel: (x: number, y: number, colorIndex: number) => void;
   setPixels: (pixels: PixelDiff[]) => void;
+
+  startPlayback: () => void;
+  stopPlayback: () => void;
+  setPlaybackFrameId: (id: string | null) => void;
+  togglePlaybackLoop: () => void;
+  setPlaybackSpeed: (speed: number) => void;
 
   undo: () => void;
   redo: () => void;
@@ -119,6 +130,10 @@ const useEditorStore = create<EditorState>((set, get) => ({
   cursorPixel: null,
   selection: null,
   previewPixels: null,
+  isPlaying: false,
+  playbackFrameId: null,
+  playbackLoop: true,
+  playbackSpeed: 1,
 
   setProject: (project) => {
     const doc = project.documents[0];
@@ -136,6 +151,9 @@ const useEditorStore = create<EditorState>((set, get) => ({
       isDrawing: false,
       lastPixel: null,
       cursorPixel: null,
+      isPlaying: false,
+      playbackFrameId: null,
+      playbackSpeed: 1,
     };
     if (project.canvasState) {
       updates.canvas = project.canvasState;
@@ -153,6 +171,9 @@ const useEditorStore = create<EditorState>((set, get) => ({
     previewPixels: null,
     isDrawing: false,
     lastPixel: null,
+    isPlaying: false,
+    playbackFrameId: null,
+    playbackSpeed: 1,
   }),
 
   createProject: (name, width, height) => {
@@ -196,6 +217,18 @@ const useEditorStore = create<EditorState>((set, get) => ({
   setPan: (x, y) => set(s => ({ canvas: { ...s.canvas, panX: x, panY: y } })),
   setFitMode: (fit) => set(s => ({ canvas: { ...s.canvas, fitMode: fit } })),
   toggleGrid: () => set(s => ({ canvas: { ...s.canvas, showGrid: !s.canvas.showGrid } })),
+  startPlayback: () => {
+    const state = get();
+    if (!state.project || !state.activeDocumentId) return;
+    const doc = state.project.documents.find(d => d.id === state.activeDocumentId);
+    if (!doc || doc.frames.length === 0) return;
+    const firstFrame = doc.frames[0];
+    set({ isPlaying: true, playbackFrameId: firstFrame.id });
+  },
+  stopPlayback: () => set({ isPlaying: false, playbackFrameId: null }),
+  setPlaybackFrameId: (id) => set({ playbackFrameId: id }),
+  togglePlaybackLoop: () => set(s => ({ playbackLoop: !s.playbackLoop })),
+  setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
   setDrawing: (val) => set({ isDrawing: val }),
   setLastPixel: (pos) => set({ lastPixel: pos }),
   setCursorPixel: (pos) => set({ cursorPixel: pos }),
@@ -394,6 +427,38 @@ const useEditorStore = create<EditorState>((set, get) => ({
     const newFrame = { ...frame, layers: frame.layers.map(l => l.id === layer.id ? newLayer : l) };
     const newDoc = { ...doc, frames: doc.frames.map(f => f.id === frame.id ? newFrame : f) };
     set({ project: { ...state.project, documents: state.project.documents.map(d => d.id === doc.id ? newDoc : d), updatedAt: Date.now() } });
+  },
+
+  clearActiveLayer: () => {
+    const state = get();
+    if (!state.project || !state.activeDocumentId || !state.activeFrameId || !state.activeLayerId) return;
+    const doc = state.project.documents.find(d => d.id === state.activeDocumentId);
+    if (!doc) return;
+    const frame = doc.frames.find(f => f.id === state.activeFrameId);
+    if (!frame) return;
+    const layer = frame.layers.find(l => l.id === state.activeLayerId);
+    if (!layer || layer.locked) return;
+
+    const diffs: PixelDiff[] = [];
+    for (let i = 0; i < layer.pixels.length; i++) {
+      if (layer.pixels[i] !== 0) {
+        const x = i % doc.width;
+        const y = Math.floor(i / doc.width);
+        diffs.push({ x, y, oldIndex: layer.pixels[i], newIndex: 0 });
+      }
+    }
+
+    if (diffs.length === 0) return;
+
+    const newPixels = new Uint8Array(doc.width * doc.height);
+    const newLayer = { ...layer, pixels: newPixels };
+    const newFrame = { ...frame, layers: frame.layers.map(l => l.id === layer.id ? newLayer : l) };
+    const newDoc = { ...doc, frames: doc.frames.map(f => f.id === frame.id ? newFrame : f) };
+    set({
+      project: { ...state.project, documents: state.project.documents.map(d => d.id === doc.id ? newDoc : d), updatedAt: Date.now() },
+      undoStack: [...state.undoStack, { id: nanoid(), description: 'Clear layer', diffs, layerId: state.activeLayerId, frameId: state.activeFrameId }],
+      redoStack: [],
+    });
   },
 
   undo: () => {
